@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leaning Board Calculator</title>
+<meta name="description" content="Enter a board's length and thickness, the span between two verticals and the support's thickness; get every segment of the layout and a live drawing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: workshop drafting sheet — inputs and color-coded results on the left, live scaled drawing on the right; stacks on phones */
+:root {
+  --paper: #f3f5f1;
+  --panel: #ffffff;
+  --ink: #1c2420;
+  --muted: #5b6660;
+  --rule: #d7dcd6;
+  --grid: #e6eae4;
+  --accent: #2d5c4f;
+  --input-bg: #fffbf1;
+  --input-rule: #d9cfb6;
+  --board-fill: #efe1c9;
+  --support-fill: #e2e5df;
+  --support-line: #858c86;
+
+  --af-line: #D85A30; --af-bg: #F5C4B3; --af-fg: #4A1B0C;
+  --bf-line: #7F77DD; --bf-bg: #CECBF6; --bf-fg: #26215C;
+  --ae-line: #1D9E75; --ae-bg: #9FE1CB; --ae-fg: #04342C;
+  --de-line: #D4537E; --de-bg: #F4C0D1; --de-fg: #4B1528;
+  --fh-line: #BA7517; --fh-bg: #FAC775; --fh-fg: #412402;
+
+  --ok-bg: #e4f0d6; --ok-fg: #3B6D11;
+  --bad-bg: #fbe5e5; --bad-fg: #A32D2D;
+
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #131816; --panel: #1b211e; --ink: #e5eae6; --muted: #98a39d;
+    --rule: #323a36; --grid: #222a26; --accent: #86c4ae;
+    --input-bg: #232925; --input-rule: #4a4636;
+    --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
+    --af-bg: #712B13; --af-fg: #F5C4B3;
+    --bf-bg: #3C3489; --bf-fg: #CECBF6;
+    --ae-bg: #085041; --ae-fg: #9FE1CB;
+    --de-bg: #72243E; --de-fg: #F4C0D1;
+    --fh-bg: #633806; --fh-fg: #FAC775;
+    --ok-bg: #27500A; --ok-fg: #C0DD97;
+    --bad-bg: #791F1F; --bad-fg: #F7C1C1;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #131816; --panel: #1b211e; --ink: #e5eae6; --muted: #98a39d;
+  --rule: #323a36; --grid: #222a26; --accent: #86c4ae;
+  --input-bg: #232925; --input-rule: #4a4636;
+  --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
+  --af-bg: #712B13; --af-fg: #F5C4B3;
+  --bf-bg: #3C3489; --bf-fg: #CECBF6;
+  --ae-bg: #085041; --ae-fg: #9FE1CB;
+  --de-bg: #72243E; --de-fg: #F4C0D1;
+  --fh-bg: #633806; --fh-fg: #FAC775;
+  --ok-bg: #27500A; --ok-fg: #C0DD97;
+  --bad-bg: #791F1F; --bad-fg: #F7C1C1;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 40px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+
+header { display: grid; gap: 6px; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent);
+}
+h1 {
+  font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 5vw, 44px);
+  line-height: 1.05; margin: 0; letter-spacing: -.01em; text-wrap: balance;
+}
+.lede { margin: 0; color: var(--muted); max-width: 64ch; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 18px 18px 20px; min-width: 0;
+}
+.calc { display: grid; gap: 18px; }
+h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin: 0 0 8px;
+}
+
+/* Inputs */
+.inputs { display: grid; gap: 6px; }
+.in-row {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) 112px; align-items: center; gap: 10px;
+  padding: 4px 0;
+}
+.in-row .sym { font-family: var(--font-mono); font-weight: 500; font-size: 16px; }
+.in-row label { color: var(--muted); font-size: 14px; }
+.in-row input[type="number"] {
+  width: 100%; font: 500 15px var(--font-mono); text-align: right;
+  padding: 7px 9px; color: var(--ink);
+  background: var(--input-bg); border: 1px solid var(--input-rule); border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.in-row input[type="number"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.same {
+  display: flex; align-items: center; gap: 10px; padding: 6px 0 2px;
+  font-family: var(--font-mono); font-size: 15px; cursor: pointer; width: fit-content;
+}
+.same input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; cursor: pointer; }
+.same input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 2px 0 0; }
+
+/* Results */
+.results { display: grid; gap: 4px; }
+.out-row {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 4px;
+  background: var(--row-bg, transparent); color: var(--row-fg, var(--ink));
+}
+.out-row .sym { font-family: var(--font-mono); font-weight: 500; }
+.out-row .formula { font-family: var(--font-mono); font-size: 12px; opacity: .8; min-width: 0; overflow-wrap: anywhere; }
+.out-row .val {
+  font-family: var(--font-mono); font-weight: 500; font-size: 16px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.out-row.bad .val { color: var(--bad-fg); background: var(--bad-bg); padding: 0 6px; border-radius: 3px; }
+.r-af { --row-bg: var(--af-bg); --row-fg: var(--af-fg); }
+.r-bf { --row-bg: var(--bf-bg); --row-fg: var(--bf-fg); }
+.r-ae { --row-bg: var(--ae-bg); --row-fg: var(--ae-fg); }
+.r-de { --row-bg: var(--de-bg); --row-fg: var(--de-fg); }
+.r-fh { --row-bg: var(--fh-bg); --row-fg: var(--fh-fg); }
+.r-ang { border: 1px solid var(--rule); }
+
+.check {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; border-radius: 4px; font-weight: 700;
+}
+.check.ok { background: var(--ok-bg); color: var(--ok-fg); }
+.check.bad { background: var(--bad-bg); color: var(--bad-fg); }
+.check span:first-child { font-family: var(--font-display); letter-spacing: .06em; text-transform: uppercase; font-size: 13px; }
+
+details { border-top: 1px solid var(--rule); padding-top: 10px; }
+summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
+summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.inter { display: grid; gap: 4px; margin-top: 8px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.inter div { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+button {
+  font: 500 13px var(--font-body); color: var(--accent); background: transparent;
+  border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Drawing */
+.drawing { display: grid; gap: 10px; }
+.sheet {
+  border-radius: 4px; overflow-x: auto;
+  background-color: var(--panel);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+  border: 1px solid var(--rule);
+}
+.sheet svg { display: block; width: 100%; height: auto; min-width: 320px; }
+.cap { margin: 0; font-size: 13px; color: var(--muted); }
+svg text { font-family: var(--font-mono); }
+.v-label { fill: var(--ink); font-size: 14px; font-weight: 500; }
+.d-label { font-size: 13px; font-weight: 500; }
+.ink-line { stroke: var(--ink); }
+.guide { stroke: var(--muted); }
+.msg { fill: var(--bad-fg); font-family: var(--font-body); font-size: 15px; }
+
+/* Formulas */
+.formulas { display: grid; gap: 10px; }
+.formulas p { margin: 0; color: var(--muted); max-width: 70ch; }
+.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px 18px; }
+.f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+.f-grid .k { font-weight: 500; }
+.k-af { color: var(--af-line); } .k-bf { color: var(--bf-line); } .k-ae { color: var(--ae-line); }
+.k-de { color: var(--de-line); } .k-fh { color: var(--fh-line); }
+
+@media (max-width: 420px) {
+  .in-row { grid-template-columns: 28px minmax(0, 1fr) 96px; }
+  .out-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .out-row .formula { display: none; }
+  .out-row { grid-template-columns: 40px 1fr; }
+}
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Board · support · span</div>
+    <h1>Leaning Board Calculator</h1>
+    <p class="lede">A board of length L and thickness T leans across span S between two verticals, resting on a support of thickness t. Enter the four values to get every segment of the layout. Use any unit, as long as it's the same for all inputs.</p>
+  </header>
+
+  <div class="layout">
+    <section class="panel calc" aria-labelledby="h-inputs">
+      <div>
+        <h2 id="h-inputs">Inputs</h2>
+        <form class="inputs" id="form" novalidate>
+          <div class="in-row"><span class="sym">L</span><label for="in-L">Length, AB</label><input id="in-L" type="number" inputmode="decimal" step="any" min="0" value="440"></div>
+          <div class="in-row"><span class="sym">T</span><label for="in-T">Thickness, AD</label><input id="in-T" type="number" inputmode="decimal" step="any" min="0" value="80"></div>
+          <div class="in-row"><span class="sym">S</span><label for="in-S">Span, EF</label><input id="in-S" type="number" inputmode="decimal" step="any" min="0" value="421"></div>
+          <label class="same" for="in-same"><input id="in-same" type="checkbox"> t=T</label>
+          <div class="in-row" id="row-t"><span class="sym">t</span><label for="in-t">Support thickness, GH</label><input id="in-t" type="number" inputmode="decimal" step="any" min="0" value="120"></div>
+          <p class="hint">Valid when T &lt; S &lt; L and 0 &lt; t &lt; AF.</p>
+        </form>
+      </div>
+
+      <div>
+        <h2 id="h-results">Results</h2>
+        <div class="results" aria-labelledby="h-results" aria-live="polite">
+          <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L(LS − Tr) / d²</span><span class="val" id="o-AF">—</span></div>
+          <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L(TS + Lr) / d²</span><span class="val" id="o-BF">—</span></div>
+          <div class="out-row r-ae"><span class="sym">AE</span><span class="formula">T(TS + Lr) / d²</span><span class="val" id="o-AE">—</span></div>
+          <div class="out-row r-de"><span class="sym">DE</span><span class="formula">T(LS − Tr) / d²</span><span class="val" id="o-DE">—</span></div>
+          <div class="out-row r-fh"><span class="sym">FH</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
+          <div class="out-row r-ang"><span class="sym">∠BAF</span><span class="formula">tilt θ</span><span class="val" id="o-ang">—</span></div>
+        </div>
+      </div>
+
+      <div class="check ok" id="check" role="status"><span>Check</span><span id="check-msg">OK</span></div>
+
+      <details>
+        <summary>Intermediate values</summary>
+        <div class="inter">
+          <div><span>d² = L² + T²</span><span id="o-d2">—</span></div>
+          <div><span>r = √(L² + T² − S²)</span><span id="o-r">—</span></div>
+          <div><span>t used</span><span id="o-tu">—</span></div>
+        </div>
+      </details>
+
+      <div class="actions"><button type="button" id="reset">Reset to example</button></div>
+    </section>
+
+    <section class="panel drawing" aria-labelledby="h-drawing">
+      <h2 id="h-drawing">Layout, to scale</h2>
+      <div class="sheet"><svg id="svg" viewBox="0 0 680 480" role="img" aria-label="Scaled drawing of the board, support and color-coded segments"></svg></div>
+      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows. The support's height doesn't matter, only its thickness GH.</p>
+    </section>
+  </div>
+
+  <section class="panel formulas" aria-labelledby="h-formulas">
+    <h2 id="h-formulas">Formulas</h2>
+    <p>With d² = L² + T² and r = √(L² + T² − S²):</p>
+    <div class="f-grid">
+      <code><span class="k k-af">AF</span> = L(LS − Tr) / d²</code>
+      <code><span class="k k-bf">BF</span> = L(TS + Lr) / d²</code>
+      <code><span class="k k-ae">AE</span> = T(TS + Lr) / d²</code>
+      <code><span class="k k-de">DE</span> = T(LS − Tr) / d²</code>
+      <code><span class="k k-fh">FH</span> = BF(AF − t) / AF</code>
+      <code><span class="k">∠BAF</span> = atan(BF / AF)</code>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const DEFAULTS = { L: 440, T: 80, S: 421, t: 120, same: false };
+  const KEY = "leaning-board-v1";
+  const $ = (id) => document.getElementById(id);
+  const inL = $("in-L"), inT = $("in-T"), inS = $("in-S"), inT2 = $("in-t"), inSame = $("in-same");
+
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (s && typeof s === "object") {
+        if (s.L != null) inL.value = s.L;
+        if (s.T != null) inT.value = s.T;
+        if (s.S != null) inS.value = s.S;
+        if (s.t != null) inT2.value = s.t;
+        inSame.checked = !!s.same;
+      }
+    } catch (e) {}
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ L: inL.value, T: inT.value, S: inS.value, t: inT2.value, same: inSame.checked }));
+    } catch (e) {}
+  }
+
+  const num = (el) => (el.value.trim() === "" ? NaN : Number(el.value));
+  const fmt = (v, d) => (Number.isFinite(v) ? v.toFixed(d) : "—");
+
+  function compute() {
+    const L = num(inL), T = num(inT), S = num(inS), tIn = num(inT2), same = inSame.checked;
+    const t = same ? T : tIn;
+    const d2 = L * L + T * T;
+    const r = Math.sqrt(d2 - S * S);
+    const AF = L * (L * S - T * r) / d2;
+    const BF = L * (T * S + L * r) / d2;
+    const AE = T * (T * S + L * r) / d2;
+    const DE = T * (L * S - T * r) / d2;
+    const FH = BF * (AF - t) / AF;
+    const ang = Math.atan2(BF, AF) * 180 / Math.PI;
+    let msg = "OK";
+    if (![L, T, S, t].every(Number.isFinite)) msg = "Enter all values";
+    else if (!Number.isFinite(r)) msg = "Invalid inputs";
+    else if (!(T < S && S < L)) msg = "Need T < S < L";
+    else if (!(t > 0 && t < AF)) msg = "Need 0 < t < AF";
+    return { L, T, S, t, d2, r, AF, BF, AE, DE, FH, ang, ok: msg === "OK", msg };
+  }
+
+  function render() {
+    $("row-t").hidden = inSame.checked;
+    const g = compute();
+    $("o-AF").textContent = fmt(g.AF, 3);
+    $("o-BF").textContent = fmt(g.BF, 3);
+    $("o-AE").textContent = fmt(g.AE, 3);
+    $("o-DE").textContent = fmt(g.DE, 3);
+    $("o-FH").textContent = fmt(g.FH, 3);
+    $("o-ang").textContent = Number.isFinite(g.ang) ? g.ang.toFixed(2) + "°" : "—";
+    $("o-d2").textContent = fmt(g.d2, 3);
+    $("o-r").textContent = fmt(g.r, 3);
+    $("o-tu").textContent = fmt(g.t, 3);
+    document.querySelectorAll(".out-row").forEach((row) => row.classList.toggle("bad", !g.ok));
+    const c = $("check");
+    c.classList.toggle("ok", g.ok);
+    c.classList.toggle("bad", !g.ok);
+    $("check-msg").textContent = g.msg;
+    draw(g);
+    save();
+  }
+
+  // ---------- Drawing ----------
+  const W = 680, H = 480;
+  const C = { af: "var(--af-line)", bf: "var(--bf-line)", ae: "var(--ae-line)", de: "var(--de-line)", fh: "var(--fh-line)" };
+
+  function line(x1, y1, x2, y2, attrs) {
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" ${attrs}/>`;
+  }
+  function text(x, y, s, attrs) {
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" ${attrs}>${s}</text>`;
+  }
+  function vDim(x, y1, y2, color, label, side) {
+    const st = `stroke="${color}" stroke-width="2"`;
+    let s = line(x, y1, x, y2, st) + line(x - 6, y1, x + 6, y1, st) + line(x - 6, y2, x + 6, y2, st);
+    const ym = (y1 + y2) / 2;
+    s += side === "left"
+      ? text(x - 9, ym, label, `class="d-label" fill="${color}" text-anchor="end" dominant-baseline="central"`)
+      : text(x + 9, ym, label, `class="d-label" fill="${color}" dominant-baseline="central"`);
+    return s;
+  }
+  function hDim(y, x1, x2, color, label) {
+    const st = `stroke="${color}" stroke-width="2"`;
+    let s = line(x1, y, x2, y, st) + line(x1, y - 6, x1, y + 6, st) + line(x2, y - 6, x2, y + 6, st);
+    s += text((x1 + x2) / 2, y + 20, label, `class="d-label" fill="${color}" text-anchor="middle" dominant-baseline="central"`);
+    return s;
+  }
+
+  function draw(g) {
+    const svg = $("svg");
+    const drawable = [g.S, g.AF, g.BF, g.AE, g.DE, g.FH, g.t].every(Number.isFinite) &&
+      g.S > 0 && g.BF > 0 && g.AE >= 0 && g.DE >= 0;
+    if (!drawable) {
+      svg.innerHTML = text(W / 2, H / 2, "Enter values within T &lt; S &lt; L to see the drawing", `class="msg" text-anchor="middle" dominant-baseline="central"`);
+      return;
+    }
+    const mL = 100, mR = 140, mT = 50, mB = 90;
+    const availW = W - mL - mR, availH = H - mT - mB;
+    const topY = g.BF + g.DE; // height of vertex C above the floor
+    const k = Math.min(availW / g.S, availH / topY);
+    const ox = mL + (availW - g.S * k) / 2;
+    const oy = H - mB;
+    const X = (x) => ox + x * k, Y = (y) => oy - y * k;
+
+    const A = [X(g.AE), Y(0)], B = [X(g.S), Y(g.BF)], Cc = [X(g.S - g.AE), Y(g.BF + g.DE)], D = [X(0), Y(g.DE)];
+    const E = [X(0), Y(0)], F = [X(g.S), Y(0)];
+    const Gx = X(g.S - g.t), Hy = Y(g.FH);
+
+    let s = "";
+    // verticals and floor
+    s += line(E[0], 24, E[0], oy + 14, `class="guide" stroke-width="1" opacity=".7"`);
+    s += line(F[0], 24, F[0], oy + 14, `class="guide" stroke-width="1" opacity=".7"`);
+    s += line(E[0], oy, F[0], oy, `class="guide" stroke-width="1" opacity=".7"`);
+    s += `<path d="M${E[0] + 10} ${oy} V${oy - 10} H${E[0]}" fill="none" class="guide" stroke-width=".8" opacity=".7"/>`;
+    s += `<path d="M${F[0] - 10} ${oy} V${oy - 10} H${F[0]}" fill="none" class="guide" stroke-width=".8" opacity=".7"/>`;
+
+    // support (only when it fits inside triangle AFB)
+    const supportOk = g.t > 0 && g.FH > 0 && g.t < g.AF;
+    if (supportOk) {
+      const solidH = Math.max(0, (oy - Hy) * 0.6);
+      s += `<rect x="${Gx.toFixed(1)}" y="${Hy.toFixed(1)}" width="${(F[0] - Gx).toFixed(1)}" height="${solidH.toFixed(1)}" fill="var(--support-fill)"/>`;
+      s += `<path d="M${Gx.toFixed(1)} ${(Hy + solidH).toFixed(1)} V${Hy.toFixed(1)} H${F[0].toFixed(1)}" fill="none" stroke="var(--support-line)" stroke-width="1"/>`;
+      s += line(Gx, Hy + solidH, Gx, oy - 4, `stroke="var(--support-line)" stroke-width="1" stroke-dasharray="4 4"`);
+    }
+
+    // board
+    s += `<polygon points="${[A, B, Cc, D].map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ")}" fill="var(--board-fill)" class="ink-line" stroke-width="1.5" stroke-linejoin="round"/>`;
+
+    // angle arc at A
+    const th = Math.atan2(g.BF, g.AF), ra = 36;
+    const ax2 = A[0] + ra * Math.cos(th), ay2 = A[1] - ra * Math.sin(th);
+    s += `<path d="M${(A[0] + ra).toFixed(1)} ${A[1].toFixed(1)} A${ra} ${ra} 0 0 0 ${ax2.toFixed(1)} ${ay2.toFixed(1)}" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`;
+    s += text(A[0] + (ra + 14) * Math.cos(th / 2), A[1] - (ra + 14) * Math.sin(th / 2), "θ", `fill="var(--accent)" font-size="13" text-anchor="middle" dominant-baseline="central"`);
+
+    // dimensions
+    s += vDim(E[0] - 36, D[1], oy, C.de, "DE", "left");
+    if (supportOk) s += vDim(F[0] + 36, Hy, oy, C.fh, "FH", "right");
+    s += vDim(F[0] + 82, B[1], oy, C.bf, "BF", "right");
+    s += hDim(oy + 40, E[0], A[0], C.ae, "AE");
+    s += hDim(oy + 40, A[0], F[0], C.af, "AF");
+
+    // points
+    const pts = [A, B, Cc, D, E, F].concat(supportOk ? [[Gx, Hy], [F[0], Hy]] : []);
+    pts.forEach((p) => { s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="var(--ink)"/>`; });
+
+    // vertex labels
+    const lab = (p, dx, dy, ch, anchor) => text(p[0] + dx, p[1] + dy, ch, `class="v-label" text-anchor="${anchor || "middle"}" dominant-baseline="central"`);
+    s += lab(A, 0, 18, "A");
+    s += lab(B, 14, -8, "B");
+    s += lab(Cc, 0, -15, "C");
+    s += lab(D, -15, 6, "D");
+    s += lab(E, -15, 16, "E");
+    s += lab(F, 14, 16, "F");
+    if (supportOk) {
+      s += lab([Gx, Hy], 0, -15, "G");
+      s += lab([F[0], Hy], 14, 2, "H");
+      s += text((Gx + F[0]) / 2, Hy + 16, "t", `fill="var(--muted)" font-size="12" text-anchor="middle" dominant-baseline="central"`);
+    }
+    svg.innerHTML = s;
+  }
+
+  load();
+  [inL, inT, inS, inT2].forEach((el) => el.addEventListener("input", render));
+  inSame.addEventListener("change", render);
+  $("form").addEventListener("submit", (e) => e.preventDefault());
+  $("reset").addEventListener("click", () => {
+    inL.value = DEFAULTS.L; inT.value = DEFAULTS.T; inS.value = DEFAULTS.S; inT2.value = DEFAULTS.t;
+    inSame.checked = DEFAULTS.same;
+    render();
+  });
+  render();
+})();
+</script>
+
+</body>
+</html>
