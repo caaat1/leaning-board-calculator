@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Leaning Board Calculator</title>
-<meta name="description" content="Enter a board's length and thickness, the span between two verticals and the support's thickness; get every segment of the layout and a live drawing.">
+<meta name="description" content="Enter two of length, span and tilt angle, plus the board and support thickness; get the third value, every segment of the layout and a live drawing.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: workshop drafting sheet — inputs and color-coded results on the left, live scaled drawing on the right; stacks on phones */
+/* Layout: workshop drafting sheet. Inputs and color-coded results on the left, live scaled drawing on the right; stacks on phones */
 :root {
   --paper: #f3f5f1;
   --panel: #ffffff;
@@ -20,6 +20,9 @@
   --accent: #2d5c4f;
   --input-bg: #fffbf1;
   --input-rule: #d9cfb6;
+  --calc-bg: #e3eeea;
+  --calc-fg: #1f4a3e;
+  --calc-rule: #b9d2c8;
   --board-fill: #efe1c9;
   --support-fill: #e2e5df;
   --support-line: #858c86;
@@ -42,6 +45,7 @@
     --paper: #131816; --panel: #1b211e; --ink: #e5eae6; --muted: #98a39d;
     --rule: #323a36; --grid: #222a26; --accent: #86c4ae;
     --input-bg: #232925; --input-rule: #4a4636;
+    --calc-bg: #1e332c; --calc-fg: #a9dcca; --calc-rule: #2f5246;
     --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
     --af-bg: #712B13; --af-fg: #F5C4B3;
     --bf-bg: #3C3489; --bf-fg: #CECBF6;
@@ -57,6 +61,7 @@
   --paper: #131816; --panel: #1b211e; --ink: #e5eae6; --muted: #98a39d;
   --rule: #323a36; --grid: #222a26; --accent: #86c4ae;
   --input-bg: #232925; --input-rule: #4a4636;
+  --calc-bg: #1e332c; --calc-fg: #a9dcca; --calc-rule: #2f5246;
   --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
   --af-bg: #712B13; --af-fg: #F5C4B3;
   --bf-bg: #3C3489; --bf-fg: #CECBF6;
@@ -94,8 +99,8 @@ h1 {
 }
 .lede { margin: 0; color: var(--muted); max-width: 64ch; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
-@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.layout { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 880px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
 .panel {
   background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
@@ -106,15 +111,24 @@ h2 {
   font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--muted); margin: 0 0 8px;
 }
+h3 {
+  font-family: var(--font-display); font-weight: 500; font-size: 14px; margin: 0;
+  color: var(--ink); letter-spacing: .02em;
+}
 
 /* Inputs */
-.inputs { display: grid; gap: 6px; }
+.inputs { display: grid; gap: 14px; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 4px; }
+legend { padding: 0; margin-bottom: 4px; }
+.group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.group-note { font-size: 12.5px; color: var(--muted); }
+
 .in-row {
-  display: grid; grid-template-columns: 34px minmax(0, 1fr) 112px; align-items: center; gap: 10px;
+  display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) 118px; align-items: center; gap: 10px;
   padding: 4px 0;
 }
 .in-row .sym { font-family: var(--font-mono); font-weight: 500; font-size: 16px; }
-.in-row label { color: var(--muted); font-size: 14px; }
+.in-row .lbl { color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .in-row input[type="number"] {
   width: 100%; font: 500 15px var(--font-mono); text-align: right;
   padding: 7px 9px; color: var(--ink);
@@ -122,8 +136,30 @@ h2 {
   font-variant-numeric: tabular-nums;
 }
 .in-row input[type="number"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Radio: "calculate this one" */
+.pick { display: grid; place-items: center; cursor: pointer; }
+.pick input { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.pick input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Calculated field: reads as an output, not an input */
+.tag {
+  display: none; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em;
+  text-transform: uppercase; padding: 1px 6px; border-radius: 3px;
+  background: var(--calc-bg); color: var(--calc-fg); border: 1px solid var(--calc-rule);
+}
+.in-row.is-calc .tag { display: inline-block; }
+.in-row.is-calc .sym { color: var(--calc-fg); }
+.in-row.is-calc input[type="number"] {
+  background: var(--calc-bg); color: var(--calc-fg); border: 1px dashed var(--calc-rule);
+  cursor: default; -moz-appearance: textfield; appearance: textfield;
+}
+.in-row.is-calc input[type="number"]::-webkit-inner-spin-button,
+.in-row.is-calc input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.in-row.is-calc input[type="number"]:focus-visible { outline: 2px dashed var(--calc-rule); }
+
 .same {
-  display: flex; align-items: center; gap: 10px; padding: 6px 0 2px;
+  display: flex; align-items: center; gap: 10px; padding: 6px 0 2px 34px;
   font-family: var(--font-mono); font-size: 15px; cursor: pointer; width: fit-content;
 }
 .same input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; cursor: pointer; }
@@ -149,7 +185,6 @@ h2 {
 .r-ae { --row-bg: var(--ae-bg); --row-fg: var(--ae-fg); }
 .r-de { --row-bg: var(--de-bg); --row-fg: var(--de-fg); }
 .r-fh { --row-bg: var(--fh-bg); --row-fg: var(--fh-fg); }
-.r-ang { border: 1px solid var(--rule); }
 
 .check {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -194,19 +229,21 @@ svg text { font-family: var(--font-mono); }
 .msg { fill: var(--bad-fg); font-family: var(--font-body); font-size: 15px; }
 
 /* Formulas */
-.formulas { display: grid; gap: 10px; }
+.formulas { display: grid; gap: 14px; }
 .formulas p { margin: 0; color: var(--muted); max-width: 70ch; }
-.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px 18px; }
-.f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+.f-block { display: grid; gap: 6px; }
+.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 18px; }
+.f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; padding: 3px 6px; border-radius: 3px; }
+.f-grid code.active { background: var(--calc-bg); color: var(--calc-fg); }
 .f-grid .k { font-weight: 500; }
 .k-af { color: var(--af-line); } .k-bf { color: var(--bf-line); } .k-ae { color: var(--ae-line); }
 .k-de { color: var(--de-line); } .k-fh { color: var(--fh-line); }
 
 @media (max-width: 420px) {
-  .in-row { grid-template-columns: 28px minmax(0, 1fr) 96px; }
-  .out-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
-  .out-row .formula { display: none; }
+  .in-row { grid-template-columns: 22px 28px minmax(0, 1fr) 100px; }
+  .same { padding-left: 32px; }
   .out-row { grid-template-columns: 40px 1fr; }
+  .out-row .formula { display: none; }
 }
 </style>
 
@@ -217,7 +254,7 @@ svg text { font-family: var(--font-mono); }
   <header>
     <div class="eyebrow">Board · support · span</div>
     <h1>Leaning Board Calculator</h1>
-    <p class="lede">A board of length L and thickness T leans across span S between two verticals, resting on a support of thickness t. Enter the four values to get every segment of the layout. Use any unit, as long as it's the same for all inputs.</p>
+    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S and ∠BAF, and the page works out the third along with every segment of the layout. Use any length unit, as long as it's the same for all lengths.</p>
   </header>
 
   <div class="layout">
@@ -225,24 +262,46 @@ svg text { font-family: var(--font-mono); }
       <div>
         <h2 id="h-inputs">Inputs</h2>
         <form class="inputs" id="form" novalidate>
-          <div class="in-row"><span class="sym">L</span><label for="in-L">Length, AB</label><input id="in-L" type="number" inputmode="decimal" step="any" min="0" value="440"></div>
-          <div class="in-row"><span class="sym">T</span><label for="in-T">Thickness, AD</label><input id="in-T" type="number" inputmode="decimal" step="any" min="0" value="80"></div>
-          <div class="in-row"><span class="sym">S</span><label for="in-S">Span, EF</label><input id="in-S" type="number" inputmode="decimal" step="any" min="0" value="421"></div>
-          <label class="same" for="in-same"><input id="in-same" type="checkbox"> t=T</label>
-          <div class="in-row" id="row-t"><span class="sym">t</span><label for="in-t">Support thickness, GH</label><input id="in-t" type="number" inputmode="decimal" step="any" min="0" value="120"></div>
-          <p class="hint">Valid when T &lt; S &lt; L and 0 &lt; t &lt; AF.</p>
+          <fieldset class="geo">
+            <legend class="group-head"><h3>Geometry</h3><span class="group-note">● = calculated</span></legend>
+            <div class="in-row" data-key="L">
+              <label class="pick" title="Calculate L"><input type="radio" name="calc" id="calc-L" value="L" aria-label="Calculate L"></label>
+              <span class="sym">L</span>
+              <label class="lbl" for="in-L">Length, AB <span class="tag">calculated</span></label>
+              <input id="in-L" type="number" inputmode="decimal" step="any" min="0" value="440">
+            </div>
+            <div class="in-row" data-key="S">
+              <label class="pick" title="Calculate S"><input type="radio" name="calc" id="calc-S" value="S" aria-label="Calculate S"></label>
+              <span class="sym">S</span>
+              <label class="lbl" for="in-S">Span, EF <span class="tag">calculated</span></label>
+              <input id="in-S" type="number" inputmode="decimal" step="any" min="0" value="421">
+            </div>
+            <div class="in-row" data-key="A">
+              <label class="pick" title="Calculate ∠BAF"><input type="radio" name="calc" id="calc-A" value="A" aria-label="Calculate angle BAF" checked></label>
+              <span class="sym">∠</span>
+              <label class="lbl" for="in-A">Tilt ∠BAF, ° <span class="tag">calculated</span></label>
+              <input id="in-A" type="number" inputmode="decimal" step="any" min="0" max="90" value="30">
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="group-head"><h3>Boards</h3></legend>
+            <div class="in-row"><span aria-hidden="true"></span><span class="sym">T</span><label class="lbl" for="in-T">Thickness, AD</label><input id="in-T" type="number" inputmode="decimal" step="any" min="0" value="80"></div>
+            <label class="same" for="in-same"><input id="in-same" type="checkbox"> t=T</label>
+            <div class="in-row" id="row-t"><span aria-hidden="true"></span><span class="sym">t</span><label class="lbl" for="in-t">Support thickness, GH</label><input id="in-t" type="number" inputmode="decimal" step="any" min="0" value="120"></div>
+          </fieldset>
+          <p class="hint" id="rule-hint"></p>
         </form>
       </div>
 
       <div>
         <h2 id="h-results">Results</h2>
         <div class="results" aria-labelledby="h-results" aria-live="polite">
-          <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L(LS − Tr) / d²</span><span class="val" id="o-AF">—</span></div>
-          <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L(TS + Lr) / d²</span><span class="val" id="o-BF">—</span></div>
-          <div class="out-row r-ae"><span class="sym">AE</span><span class="formula">T(TS + Lr) / d²</span><span class="val" id="o-AE">—</span></div>
-          <div class="out-row r-de"><span class="sym">DE</span><span class="formula">T(LS − Tr) / d²</span><span class="val" id="o-DE">—</span></div>
+          <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L cos θ</span><span class="val" id="o-AF">—</span></div>
+          <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ</span><span class="val" id="o-BF">—</span></div>
+          <div class="out-row r-ae"><span class="sym">AE</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
+          <div class="out-row r-de"><span class="sym">DE</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
           <div class="out-row r-fh"><span class="sym">FH</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
-          <div class="out-row r-ang"><span class="sym">∠BAF</span><span class="formula">tilt θ</span><span class="val" id="o-ang">—</span></div>
         </div>
       </div>
 
@@ -251,8 +310,8 @@ svg text { font-family: var(--font-mono); }
       <details>
         <summary>Intermediate values</summary>
         <div class="inter">
-          <div><span>d² = L² + T²</span><span id="o-d2">—</span></div>
-          <div><span>r = √(L² + T² − S²)</span><span id="o-r">—</span></div>
+          <div id="i-d2"><span>d² = L² + T²</span><span id="o-d2">—</span></div>
+          <div id="i-r"><span>r = √(L² + T² − S²)</span><span id="o-r">—</span></div>
           <div><span>t used</span><span id="o-tu">—</span></div>
         </div>
       </details>
@@ -269,77 +328,157 @@ svg text { font-family: var(--font-mono); }
 
   <section class="panel formulas" aria-labelledby="h-formulas">
     <h2 id="h-formulas">Formulas</h2>
-    <p>With d² = L² + T² and r = √(L² + T² − S²):</p>
-    <div class="f-grid">
-      <code><span class="k k-af">AF</span> = L(LS − Tr) / d²</code>
-      <code><span class="k k-bf">BF</span> = L(TS + Lr) / d²</code>
-      <code><span class="k k-ae">AE</span> = T(TS + Lr) / d²</code>
-      <code><span class="k k-de">DE</span> = T(LS − Tr) / d²</code>
-      <code><span class="k k-fh">FH</span> = BF(AF − t) / AF</code>
-      <code><span class="k">∠BAF</span> = atan(BF / AF)</code>
+    <div class="f-block">
+      <h3>Calculated value</h3>
+      <div class="f-grid">
+        <code id="f-A"><span class="k">θ</span> = atan2(TS + Lr, LS − Tr), r = √(L² + T² − S²)</code>
+        <code id="f-S"><span class="k">S</span> = L cos θ + T sin θ</code>
+        <code id="f-L"><span class="k">L</span> = (S − T sin θ) / cos θ</code>
+      </div>
+    </div>
+    <div class="f-block">
+      <h3>Segments</h3>
+      <div class="f-grid">
+        <code><span class="k k-af">AF</span> = L cos θ</code>
+        <code><span class="k k-bf">BF</span> = L sin θ</code>
+        <code><span class="k k-ae">AE</span> = T sin θ</code>
+        <code><span class="k k-de">DE</span> = T cos θ</code>
+        <code><span class="k k-fh">FH</span> = BF(AF − t) / AF</code>
+      </div>
     </div>
   </section>
 </div>
 
 <script>
 (function () {
-  const DEFAULTS = { L: 440, T: 80, S: 421, t: 120, same: false };
-  const KEY = "leaning-board-v1";
+  const DEFAULTS = { calc: "A", L: "440", S: "421", A: "30", T: "80", t: "120", same: false };
+  const KEY = "leaning-board-v2";
+  const DEG = Math.PI / 180;
   const $ = (id) => document.getElementById(id);
-  const inL = $("in-L"), inT = $("in-T"), inS = $("in-S"), inT2 = $("in-t"), inSame = $("in-same");
+  const field = { L: $("in-L"), S: $("in-S"), A: $("in-A") };
+  const inT = $("in-T"), inT2 = $("in-t"), inSame = $("in-same");
+  const radios = { L: $("calc-L"), S: $("calc-S"), A: $("calc-A") };
+  const DIGITS = { L: 3, S: 3, A: 2 };
+
+  // A calculated value is shown rounded; keep its exact value so that switching
+  // the radio does not shift the layout, until the user edits the field.
+  const exact = { L: null, S: null, A: null };
+  const shown = { L: null, S: null, A: null };
+
+  const mode = () => (radios.L.checked ? "L" : radios.S.checked ? "S" : "A");
+  const num = (el) => (el.value.trim() === "" ? NaN : Number(el.value));
+  function geo(key) {
+    const el = field[key];
+    if (shown[key] !== null && el.value === shown[key]) return exact[key];
+    return num(el);
+  }
+  const fmt = (v, d) => (Number.isFinite(v) ? v.toFixed(d) : "—");
 
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY) || "null");
       if (s && typeof s === "object") {
-        if (s.L != null) inL.value = s.L;
+        ["L", "S", "A"].forEach((k) => { if (s[k] != null) field[k].value = s[k]; });
         if (s.T != null) inT.value = s.T;
-        if (s.S != null) inS.value = s.S;
         if (s.t != null) inT2.value = s.t;
         inSame.checked = !!s.same;
+        if (radios[s.calc]) radios[s.calc].checked = true;
       }
     } catch (e) {}
   }
   function save() {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ L: inL.value, T: inT.value, S: inS.value, t: inT2.value, same: inSame.checked }));
+      localStorage.setItem(KEY, JSON.stringify({
+        calc: mode(), L: field.L.value, S: field.S.value, A: field.A.value,
+        T: inT.value, t: inT2.value, same: inSame.checked
+      }));
     } catch (e) {}
   }
 
-  const num = (el) => (el.value.trim() === "" ? NaN : Number(el.value));
-  const fmt = (v, d) => (Number.isFinite(v) ? v.toFixed(d) : "—");
-
   function compute() {
-    const L = num(inL), T = num(inT), S = num(inS), tIn = num(inT2), same = inSame.checked;
-    const t = same ? T : tIn;
-    const d2 = L * L + T * T;
-    const r = Math.sqrt(d2 - S * S);
-    const AF = L * (L * S - T * r) / d2;
-    const BF = L * (T * S + L * r) / d2;
-    const AE = T * (T * S + L * r) / d2;
-    const DE = T * (L * S - T * r) / d2;
-    const FH = BF * (AF - t) / AF;
-    const ang = Math.atan2(BF, AF) * 180 / Math.PI;
+    const m = mode();
+    const T = num(inT), t = inSame.checked ? T : num(inT2);
+    let L, S, th, d2 = NaN, r = NaN, AF, BF, AE, DE;
     let msg = "OK";
-    if (![L, T, S, t].every(Number.isFinite)) msg = "Enter all values";
-    else if (!Number.isFinite(r)) msg = "Invalid inputs";
-    else if (!(T < S && S < L)) msg = "Need T < S < L";
-    else if (!(t > 0 && t < AF)) msg = "Need 0 < t < AF";
-    return { L, T, S, t, d2, r, AF, BF, AE, DE, FH, ang, ok: msg === "OK", msg };
+
+    if (m === "A") {
+      L = geo("L"); S = geo("S");
+      d2 = L * L + T * T;
+      r = Math.sqrt(d2 - S * S);
+      AF = L * (L * S - T * r) / d2;
+      BF = L * (T * S + L * r) / d2;
+      AE = T * (T * S + L * r) / d2;
+      DE = T * (L * S - T * r) / d2;
+      th = Math.atan2(BF, AF);
+      if (![L, S, T, t].every(Number.isFinite)) msg = "Enter all values";
+      else if (!(T > 0)) msg = "Need T > 0";
+      else if (!Number.isFinite(r)) msg = "Need S ≤ √(L² + T²)";
+      else if (!(T < S && S < L)) msg = "Need T < S < L";
+    } else {
+      const deg = geo("A");
+      th = deg * DEG;
+      const c = Math.cos(th), s = Math.sin(th);
+      if (m === "S") { L = geo("L"); S = L * c + T * s; }
+      else { S = geo("S"); L = (S - T * s) / c; }
+      AF = L * c; BF = L * s; AE = T * s; DE = T * c;
+      if (![deg, m === "S" ? L : S, T, t].every(Number.isFinite)) msg = "Enter all values";
+      else if (!(T > 0)) msg = "Need T > 0";
+      else if (!(deg > 0 && deg < 90)) msg = "Need 0° < ∠BAF < 90°";
+      else if (m === "L" && !(S > T * s)) msg = "Need S > T·sin θ";
+      else if (!(L > T)) msg = "Need L > T";
+    }
+
+    const FH = BF * (AF - t) / AF;
+    if (msg === "OK" && !(t > 0 && t < AF)) msg = "Need 0 < t < AF";
+    const geomOk = msg === "OK" || msg === "Need 0 < t < AF";
+    return { m, L, S, T, t, th, deg: th / DEG, d2, r, AF, BF, AE, DE, FH, ok: msg === "OK", geomOk, msg };
   }
 
+  const HINTS = {
+    A: "Valid when T < S < L and 0 < t < AF.",
+    S: "Valid when 0° < ∠BAF < 90°, L > T and 0 < t < AF.",
+    L: "Valid when 0° < ∠BAF < 90°, S > T·sin θ, L > T and 0 < t < AF."
+  };
+
   function render() {
+    const m = mode();
     $("row-t").hidden = inSame.checked;
+
+    // Mark the calculated field
+    ["L", "S", "A"].forEach((k) => {
+      const row = field[k].closest(".in-row");
+      const isCalc = k === m;
+      row.classList.toggle("is-calc", isCalc);
+      field[k].readOnly = isCalc;
+      field[k].tabIndex = isCalc ? -1 : 0;
+      field[k].setAttribute("aria-readonly", isCalc ? "true" : "false");
+      $("f-" + k).classList.toggle("active", isCalc);
+    });
+
     const g = compute();
+
+    // Write the calculated value into its field
+    const calcVal = m === "A" ? g.deg : m === "S" ? g.S : g.L;
+    if (Number.isFinite(calcVal) && g.geomOk) {
+      shown[m] = calcVal.toFixed(DIGITS[m]);
+      exact[m] = calcVal;
+      field[m].value = shown[m];
+    } else {
+      shown[m] = null; exact[m] = null;
+      field[m].value = "";
+    }
+
     $("o-AF").textContent = fmt(g.AF, 3);
     $("o-BF").textContent = fmt(g.BF, 3);
     $("o-AE").textContent = fmt(g.AE, 3);
     $("o-DE").textContent = fmt(g.DE, 3);
     $("o-FH").textContent = fmt(g.FH, 3);
-    $("o-ang").textContent = Number.isFinite(g.ang) ? g.ang.toFixed(2) + "°" : "—";
+    $("i-d2").hidden = $("i-r").hidden = m !== "A";
     $("o-d2").textContent = fmt(g.d2, 3);
     $("o-r").textContent = fmt(g.r, 3);
     $("o-tu").textContent = fmt(g.t, 3);
+    $("rule-hint").textContent = HINTS[m];
+
     document.querySelectorAll(".out-row").forEach((row) => row.classList.toggle("bad", !g.ok));
     const c = $("check");
     c.classList.toggle("ok", g.ok);
@@ -377,15 +516,15 @@ svg text { font-family: var(--font-mono); }
 
   function draw(g) {
     const svg = $("svg");
-    const drawable = [g.S, g.AF, g.BF, g.AE, g.DE, g.FH, g.t].every(Number.isFinite) &&
-      g.S > 0 && g.BF > 0 && g.AE >= 0 && g.DE >= 0;
+    const drawable = g.geomOk && [g.S, g.AF, g.BF, g.AE, g.DE].every(Number.isFinite) &&
+      g.S > 0 && g.AF > 0 && g.BF > 0 && g.AE > 0 && g.DE > 0;
     if (!drawable) {
-      svg.innerHTML = text(W / 2, H / 2, "Enter values within T &lt; S &lt; L to see the drawing", `class="msg" text-anchor="middle" dominant-baseline="central"`);
+      svg.innerHTML = text(W / 2, H / 2, "Enter valid values to see the drawing", `class="msg" text-anchor="middle" dominant-baseline="central"`);
       return;
     }
     const mL = 100, mR = 140, mT = 50, mB = 90;
     const availW = W - mL - mR, availH = H - mT - mB;
-    const topY = g.BF + g.DE; // height of vertex C above the floor
+    const topY = g.BF + g.DE;
     const k = Math.min(availW / g.S, availH / topY);
     const ox = mL + (availW - g.S * k) / 2;
     const oy = H - mB;
@@ -396,15 +535,13 @@ svg text { font-family: var(--font-mono); }
     const Gx = X(g.S - g.t), Hy = Y(g.FH);
 
     let s = "";
-    // verticals and floor
     s += line(E[0], 24, E[0], oy + 14, `class="guide" stroke-width="1" opacity=".7"`);
     s += line(F[0], 24, F[0], oy + 14, `class="guide" stroke-width="1" opacity=".7"`);
     s += line(E[0], oy, F[0], oy, `class="guide" stroke-width="1" opacity=".7"`);
     s += `<path d="M${E[0] + 10} ${oy} V${oy - 10} H${E[0]}" fill="none" class="guide" stroke-width=".8" opacity=".7"/>`;
     s += `<path d="M${F[0] - 10} ${oy} V${oy - 10} H${F[0]}" fill="none" class="guide" stroke-width=".8" opacity=".7"/>`;
 
-    // support (only when it fits inside triangle AFB)
-    const supportOk = g.t > 0 && g.FH > 0 && g.t < g.AF;
+    const supportOk = Number.isFinite(g.t) && Number.isFinite(g.FH) && g.t > 0 && g.FH > 0 && g.t < g.AF;
     if (supportOk) {
       const solidH = Math.max(0, (oy - Hy) * 0.6);
       s += `<rect x="${Gx.toFixed(1)}" y="${Hy.toFixed(1)}" width="${(F[0] - Gx).toFixed(1)}" height="${solidH.toFixed(1)}" fill="var(--support-fill)"/>`;
@@ -412,28 +549,23 @@ svg text { font-family: var(--font-mono); }
       s += line(Gx, Hy + solidH, Gx, oy - 4, `stroke="var(--support-line)" stroke-width="1" stroke-dasharray="4 4"`);
     }
 
-    // board
     s += `<polygon points="${[A, B, Cc, D].map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ")}" fill="var(--board-fill)" class="ink-line" stroke-width="1.5" stroke-linejoin="round"/>`;
 
-    // angle arc at A
-    const th = Math.atan2(g.BF, g.AF), ra = 36;
+    const th = g.th, ra = 36;
     const ax2 = A[0] + ra * Math.cos(th), ay2 = A[1] - ra * Math.sin(th);
     s += `<path d="M${(A[0] + ra).toFixed(1)} ${A[1].toFixed(1)} A${ra} ${ra} 0 0 0 ${ax2.toFixed(1)} ${ay2.toFixed(1)}" fill="none" stroke="var(--accent)" stroke-width="1.5"/>`;
     s += text(A[0] + (ra + 14) * Math.cos(th / 2), A[1] - (ra + 14) * Math.sin(th / 2), "θ", `fill="var(--accent)" font-size="13" text-anchor="middle" dominant-baseline="central"`);
 
-    // dimensions
     s += vDim(E[0] - 36, D[1], oy, C.de, "DE", "left");
     if (supportOk) s += vDim(F[0] + 36, Hy, oy, C.fh, "FH", "right");
     s += vDim(F[0] + 82, B[1], oy, C.bf, "BF", "right");
     s += hDim(oy + 40, E[0], A[0], C.ae, "AE");
     s += hDim(oy + 40, A[0], F[0], C.af, "AF");
 
-    // points
     const pts = [A, B, Cc, D, E, F].concat(supportOk ? [[Gx, Hy], [F[0], Hy]] : []);
     pts.forEach((p) => { s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="var(--ink)"/>`; });
 
-    // vertex labels
-    const lab = (p, dx, dy, ch, anchor) => text(p[0] + dx, p[1] + dy, ch, `class="v-label" text-anchor="${anchor || "middle"}" dominant-baseline="central"`);
+    const lab = (p, dx, dy, ch) => text(p[0] + dx, p[1] + dy, ch, `class="v-label" text-anchor="middle" dominant-baseline="central"`);
     s += lab(A, 0, 18, "A");
     s += lab(B, 14, -8, "B");
     s += lab(Cc, 0, -15, "C");
@@ -449,12 +581,15 @@ svg text { font-family: var(--font-mono); }
   }
 
   load();
-  [inL, inT, inS, inT2].forEach((el) => el.addEventListener("input", render));
+  ["L", "S", "A"].forEach((k) => field[k].addEventListener("input", render));
+  [inT, inT2].forEach((el) => el.addEventListener("input", render));
   inSame.addEventListener("change", render);
+  Object.values(radios).forEach((r) => r.addEventListener("change", render));
   $("form").addEventListener("submit", (e) => e.preventDefault());
   $("reset").addEventListener("click", () => {
-    inL.value = DEFAULTS.L; inT.value = DEFAULTS.T; inS.value = DEFAULTS.S; inT2.value = DEFAULTS.t;
-    inSame.checked = DEFAULTS.same;
+    ["L", "S", "A"].forEach((k) => { field[k].value = DEFAULTS[k]; shown[k] = exact[k] = null; });
+    inT.value = DEFAULTS.T; inT2.value = DEFAULTS.t; inSame.checked = DEFAULTS.same;
+    radios[DEFAULTS.calc].checked = true;
     render();
   });
   render();
