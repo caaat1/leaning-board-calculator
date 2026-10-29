@@ -265,7 +265,7 @@ svg text { font-family: var(--font-mono); }
   <header>
     <div class="eyebrow">Board · support · span</div>
     <h1>Leaning Board Calculator</h1>
-    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, ∠BAF and H, and the page works out the other two along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
+    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, H and ∠BAF, and the page works out the other two along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
   </header>
 
   <div class="layout">
@@ -288,16 +288,16 @@ svg text { font-family: var(--font-mono); }
               <input class="num" id="in-S" data-key="S" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="421">
             </div>
             <div class="in-row">
-              <label class="pick" title="Enter ∠BAF"><input type="checkbox" id="pick-A" aria-label="Enter angle BAF"></label>
-              <span class="sym">∠</span>
-              <label class="lbl" for="in-A">Tilt ∠BAF, ° <span class="tag">calculated</span></label>
-              <input class="num" id="in-A" data-key="A" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="30">
-            </div>
-            <div class="in-row">
               <label class="pick" title="Enter H"><input type="checkbox" id="pick-H" aria-label="Enter H"></label>
               <span class="sym">H</span>
               <label class="lbl" for="in-H">Height, FC′ <span class="tag">calculated</span></label>
               <input class="num" id="in-H" data-key="H" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="289.398">
+            </div>
+            <div class="in-row">
+              <label class="pick" title="Enter ∠BAF"><input type="checkbox" id="pick-A" aria-label="Enter angle BAF"></label>
+              <span class="sym">∠</span>
+              <label class="lbl" for="in-A">Tilt ∠BAF, ° <span class="tag">calculated</span></label>
+              <input class="num" id="in-A" data-key="A" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="30">
             </div>
           </fieldset>
 
