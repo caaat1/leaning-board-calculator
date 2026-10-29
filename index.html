@@ -293,6 +293,12 @@ svg text { font-family: var(--font-mono); }
               <label class="lbl" for="in-A">Tilt ∠BAF, ° <span class="tag">calculated</span></label>
               <input class="num" id="in-A" data-key="A" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="30">
             </div>
+            <div class="in-row is-calc" id="row-h">
+              <span aria-hidden="true"></span>
+              <span class="sym">h</span>
+              <label class="lbl" for="in-h">Height, FC′ <span class="tag">calculated</span></label>
+              <input class="num" id="in-h" type="text" readonly tabindex="-1" value="—">
+            </div>
           </fieldset>
 
           <fieldset>
@@ -475,6 +481,7 @@ svg text { font-family: var(--font-mono); }
     if (g.geomOk && Number.isFinite(calcVal)) { exact[m] = calcVal; shown[m] = calcVal.toFixed(DIGITS[m]); }
     else { exact[m] = NaN; shown[m] = "—"; }
     field[m].value = shown[m];
+    $("in-h").value = g.geomOk ? fmt(g.BF + g.DE, 3) : "—";   // FC′ = BF + BC′, always calculated
 
     Object.keys(field).forEach((k) => field[k].setAttribute("aria-invalid", String(g.badField === k)));
 
