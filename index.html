@@ -244,11 +244,11 @@ svg text { font-family: var(--font-mono); }
 .formulas { display: grid; gap: 10px; line-height: 1.35; }
 .formulas p { margin: 0; color: var(--muted); max-width: 70ch; }
 .f-block { display: grid; gap: 4px; }
-.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2px 18px; }
+.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 2px 18px; align-items: start; }
 .f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; padding: 2px 6px; border-radius: 3px; }
 .f-grid code.active { background: var(--calc-bg); color: var(--calc-fg); }
 .f-grid .k { font-weight: 500; }
-.formulas .f-note { font-family: var(--font-mono); font-size: 12.5px; padding-left: 6px; }
+.formulas .f-note { font-family: var(--font-mono); font-size: 12.5px; padding-left: 6px; max-width: none; }
 .k-af { color: var(--af-text); } .k-bf { color: var(--bf-text); } .k-ae { color: var(--ae-text); }
 .k-de { color: var(--de-text); } .k-fh { color: var(--fh-text); } .k-bh { color: var(--bh-text); }
 
@@ -265,7 +265,7 @@ svg text { font-family: var(--font-mono); }
   <header>
     <div class="eyebrow">Board · support · span</div>
     <h1>Leaning Board Calculator</h1>
-    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S and ∠BAF, and the page works out the third along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
+    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, ∠BAF and H, and the page works out the other two along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
   </header>
 
   <div class="layout">
@@ -274,30 +274,30 @@ svg text { font-family: var(--font-mono); }
         <h2 id="h-inputs">Inputs</h2>
         <form class="inputs" id="form" novalidate>
           <fieldset>
-            <legend class="group-head"><h3>Geometry</h3><span class="group-note">● calculated</span></legend>
+            <legend class="group-head"><h3>Geometry</h3><span class="group-note">Tick the two you know</span></legend>
             <div class="in-row">
-              <label class="pick" title="Calculate L"><input type="radio" name="calc" id="calc-L" value="L" aria-label="Calculate L"></label>
+              <label class="pick" title="Enter L"><input type="checkbox" id="pick-L" aria-label="Enter L" checked></label>
               <span class="sym">L</span>
               <label class="lbl" for="in-L">Length, AB <span class="tag">calculated</span></label>
               <input class="num" id="in-L" data-key="L" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="440">
             </div>
             <div class="in-row">
-              <label class="pick" title="Calculate S"><input type="radio" name="calc" id="calc-S" value="S" aria-label="Calculate S"></label>
+              <label class="pick" title="Enter S"><input type="checkbox" id="pick-S" aria-label="Enter S" checked></label>
               <span class="sym">S</span>
               <label class="lbl" for="in-S">Span, A′F <span class="tag">calculated</span></label>
               <input class="num" id="in-S" data-key="S" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="421">
             </div>
             <div class="in-row">
-              <label class="pick" title="Calculate ∠BAF"><input type="radio" name="calc" id="calc-A" value="A" aria-label="Calculate angle BAF" checked></label>
+              <label class="pick" title="Enter ∠BAF"><input type="checkbox" id="pick-A" aria-label="Enter angle BAF"></label>
               <span class="sym">∠</span>
               <label class="lbl" for="in-A">Tilt ∠BAF, ° <span class="tag">calculated</span></label>
               <input class="num" id="in-A" data-key="A" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="30">
             </div>
-            <div class="in-row is-calc" id="row-h">
-              <span aria-hidden="true"></span>
-              <span class="sym">h</span>
-              <label class="lbl" for="in-h">Height, FC′ <span class="tag">calculated</span></label>
-              <input class="num" id="in-h" type="text" readonly tabindex="-1" value="—">
+            <div class="in-row">
+              <label class="pick" title="Enter H"><input type="checkbox" id="pick-H" aria-label="Enter H"></label>
+              <span class="sym">H</span>
+              <label class="lbl" for="in-H">Height, FC′ <span class="tag">calculated</span></label>
+              <input class="num" id="in-H" data-key="H" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="289.398">
             </div>
           </fieldset>
 
@@ -332,7 +332,7 @@ svg text { font-family: var(--font-mono); }
         <summary>Intermediate values</summary>
         <div class="inter">
           <div id="i-d2"><span>d² = L² + T²</span><span id="o-d2">—</span></div>
-          <div id="i-r"><span>r = √(L² + T² − S²)</span><span id="o-r">—</span></div>
+          <div id="i-r"><span id="r-lbl">r = √(L² + T² − S²)</span><span id="o-r">—</span></div>
           <div><span>t used</span><span id="o-tu">—</span></div>
         </div>
       </details>
@@ -350,13 +350,17 @@ svg text { font-family: var(--font-mono); }
   <section class="panel formulas" aria-labelledby="h-formulas">
     <h2 id="h-formulas">Formulas</h2>
     <div class="f-block">
-      <h3>Calculated value</h3>
+      <h3>Calculated values</h3>
       <div class="f-grid">
-        <code id="f-A"><span class="k">θ</span> = atan2(TS + Lr, LS − Tr)</code>
+        <code id="f-thLS"><span class="k">θ</span> = atan2(TS + Lr, LS − Tr)</code>
+        <code id="f-thLH"><span class="k">θ</span> = atan2(LH − Tr, TH + Lr)</code>
+        <code id="f-thSH"><span class="k">θ</span>: H cos θ − S sin θ = T cos 2θ</code>
+        <code id="f-LS"><span class="k">L</span> = (S − T sin θ) / cos θ</code>
+        <code id="f-LH"><span class="k">L</span> = (H − T cos θ) / sin θ</code>
         <code id="f-S"><span class="k">S</span> = L cos θ + T sin θ</code>
-        <code id="f-L"><span class="k">L</span> = (S − T sin θ) / cos θ</code>
+        <code id="f-H"><span class="k">H</span> = L sin θ + T cos θ</code>
       </div>
-      <p class="f-note">where r = √(L² + T² − S²)</p>
+      <p class="f-note">where r = √(L² + T² − S²) with S entered, or √(L² + T² − H²) with H entered. With S and H entered, θ is solved numerically.</p>
     </div>
     <div class="f-block">
       <h3>Segments</h3>
@@ -374,30 +378,40 @@ svg text { font-family: var(--font-mono); }
 
 <script>
 (function () {
-  const DEFAULTS = { calc: "A", L: "440", S: "421", A: "30", T: "80", t: "120", same: false };
+  const DEFAULTS = { entered: ["L", "S"], L: "440", S: "421", A: "30", H: "289.398", T: "80", t: "120", same: false };
   const KEY = "leaning-board-v2";
   const DEG = Math.PI / 180;
-  const GEO = ["L", "S", "A"];                       // the three values the radio buttons choose between
-  const NEEDS = { A: ["L", "S", "T"], S: ["L", "A", "T"], L: ["S", "A", "T"] };
-  const NAMES = { L: "L", S: "S", A: "∠BAF", T: "T", t: "t" };
-  const DIGITS = { L: 3, S: 3, A: 2 };
+  const GEO = ["L", "S", "A", "H"];                  // any two are entered, the other two calculated
+  const NAMES = { L: "L", S: "S", A: "∠BAF", H: "H", T: "T", t: "t" };
+  const DIGITS = { L: 3, S: 3, A: 2, H: 3 };
   const HINTS = {
-    A: "Valid when T < S < L and 0 < t < AF. For S ≥ L, enter ∠BAF instead.",
-    S: "Valid when 0° < ∠BAF < 90°, L > T and 0 < t < AF.",
-    L: "Valid when 0° < ∠BAF < 90°, S > T(sin θ + cos θ) and 0 < t < AF."
+    LS: "Valid when T < S < L and 0 < t < AF. For S ≥ L, enter ∠BAF instead.",
+    LH: "Valid when T < H < L and 0 < t < AF. For H ≥ L, enter ∠BAF instead.",
+    SH: "Valid when S > T, H > T, only one angle fits, and 0 < t < AF.",
+    LA: "Valid when 0° < ∠BAF < 90°, L > T and 0 < t < AF.",
+    SA: "Valid when 0° < ∠BAF < 90°, S > T(sin θ + cos θ) and 0 < t < AF.",
+    AH: "Valid when 0° < ∠BAF < 90°, H > T(sin θ + cos θ) and 0 < t < AF."
   };
+  // Formulas in use for each pair of entered values
+  const USES = {
+    LS: ["f-thLS", "f-H"], LH: ["f-thLH", "f-S"], SH: ["f-thSH", "f-LS"],
+    LA: ["f-S", "f-H"], SA: ["f-LS", "f-H"], AH: ["f-LH", "f-S"]
+  };
+  const F_IDS = ["f-thLS", "f-thLH", "f-thSH", "f-LS", "f-LH", "f-S", "f-H"];
 
   const $ = (id) => document.getElementById(id);
-  const field = { L: $("in-L"), S: $("in-S"), A: $("in-A"), T: $("in-T"), t: $("in-t") };
-  const radios = { L: $("calc-L"), S: $("calc-S"), A: $("calc-A") };
+  const field = { L: $("in-L"), S: $("in-S"), A: $("in-A"), H: $("in-H"), T: $("in-T"), t: $("in-t") };
+  const picks = { L: $("pick-L"), S: $("pick-S"), A: $("pick-A"), H: $("pick-H") };
   const inSame = $("in-same");
 
-  // The calculated field shows a rounded value. Its exact value is kept, so switching
-  // which value is calculated doesn't shift the layout. The first edit of that field drops it.
-  const exact = { L: null, S: null, A: null };
-  const shown = { L: null, S: null, A: null };
+  // The two entered values, least recently touched first. Ticking a third lets the first go.
+  let entered = DEFAULTS.entered.slice();
+  const pairKey = () => GEO.filter((k) => entered.includes(k)).join("");
 
-  const mode = () => GEO.find((k) => radios[k].checked) || "A";
+  // A calculated field shows a rounded value. Its exact value is kept, so switching
+  // what is entered doesn't shift the layout. The first edit of that field drops it.
+  const exact = { L: null, S: null, A: null, H: null };
+  const shown = { L: null, S: null, A: null, H: null };
 
   // Accepts "12.5" and "12,5". Anything else (thousands separators, units, stray text) is not a number.
   function parse(str) {
@@ -411,42 +425,73 @@ svg text { font-family: var(--font-mono); }
   const fmt = (v, d) => (Number.isFinite(v) ? v.toFixed(d) : "—");
 
   // ---------- Geometry ----------
-  // Returns every segment for the chosen mode. Geometry and the support are checked
-  // separately: a bad t only affects FG and BG, never the board's layout.
-  function solve(m, v) {
-    const T = v.T, t = v.same ? v.T : v.t;
-    const g = { m, T, t, L: NaN, S: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null };
-    let msg = "OK";
+  // With S and H known: H cos θ − S sin θ = T cos 2θ. Scan (0°, 90°) for sign changes,
+  // refine each by bisection, keep the angles that give a board longer than T.
+  function solveSH(S, H, T) {
+    const f = (a) => H * Math.cos(a) - S * Math.sin(a) - T * Math.cos(2 * a);
+    const N = 900, end = Math.PI / 2, roots = [];
+    let a0 = 1e-9, f0 = f(a0);
+    for (let i = 1; i <= N; i++) {
+      const a1 = i === N ? end - 1e-9 : (end * i) / N, f1 = f(a1);
+      if (f0 * f1 < 0) {
+        let lo = a0, hi = a1, flo = f0;
+        for (let j = 0; j < 60; j++) {
+          const mid = (lo + hi) / 2, fm = f(mid);
+          if (flo * fm <= 0) hi = mid; else { lo = mid; flo = fm; }
+        }
+        roots.push((lo + hi) / 2);
+      }
+      a0 = a1; f0 = f1;
+    }
+    return roots.filter((a) => (S - T * Math.sin(a)) / Math.cos(a) > T);
+  }
 
-    const missing = NEEDS[m].find((k) => !Number.isFinite(v[k]));
+  // Returns every segment for the entered pair. Geometry and the support are checked
+  // separately: a bad t only affects FG and BG, never the board's layout.
+  function solve(key, v) {
+    const T = v.T, t = v.same ? v.T : v.t;
+    const g = { key, T, t, L: NaN, S: NaN, H: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null };
+    let msg = "OK", th = NaN, L = NaN;
+
+    const missing = key.split("").concat("T").find((k) => !Number.isFinite(v[k]));
     if (missing) { msg = "Enter a number for " + NAMES[missing]; g.badField = missing; }
     else if (!(T > 0)) msg = "Need T > 0";
-    else if (m === "A") {
-      const L = v.L, S = v.S, d2 = L * L + T * T;
+    else if (key === "LS" || key === "LH") {
+      // L and one side of the bounding box: closed form, with a single root below L.
+      const n = key[1], W = v[n];
+      L = v.L;
+      const d2 = L * L + T * T;
       if (!(L > T)) msg = "Need L > T";
-      else if (!(S > T)) msg = "Need S > T";
-      else if (!(S * S < d2)) msg = "Need S < √(L² + T²)";
-      else if (!(S < L)) msg = "S ≥ L allows two angles. Enter ∠BAF instead";
+      else if (!(W > T)) msg = `Need ${n} > T`;
+      else if (!(W * W < d2)) msg = `Need ${n} < √(L² + T²)`;
+      else if (!(W < L)) msg = `${n} ≥ L allows two angles. Enter ∠BAF instead`;
       else {
-        // Closed form; S < L picks the single root with A as the lowest vertex.
-        const r = Math.sqrt(d2 - S * S);
-        Object.assign(g, {
-          L, S, d2, r,
-          AF: L * (L * S - T * r) / d2, BF: L * (T * S + L * r) / d2,
-          AE: T * (T * S + L * r) / d2, DE: T * (L * S - T * r) / d2
-        });
-        g.th = Math.atan2(g.BF, g.AF);
+        const r = Math.sqrt(d2 - W * W), p = (L * W - T * r) / d2, q = (T * W + L * r) / d2;
+        th = n === "S" ? Math.atan2(q, p) : Math.atan2(p, q);   // with H the roles of sin and cos swap
+        g.d2 = d2; g.r = r;
+      }
+    } else if (key === "SH") {
+      if (!(v.S > T)) msg = "Need S > T";
+      else if (!(v.H > T)) msg = "Need H > T";
+      else {
+        const roots = solveSH(v.S, v.H, T);
+        if (roots.length === 0) msg = "No board longer than T fits this S and H";
+        else if (roots.length > 1) msg = "Several angles fit. Enter ∠BAF instead";
+        else { th = roots[0]; L = (v.S - T * Math.sin(th)) / Math.cos(th); }
       }
     } else if (!(v.A > 0 && v.A < 90)) msg = "Need 0° < ∠BAF < 90°";
     else {
-      const th = v.A * DEG, c = Math.cos(th), s = Math.sin(th);
-      let L = v.L, S = v.S;
-      if (m === "S") {
-        if (!(L > T)) msg = "Need L > T";
-        else S = L * c + T * s;
-      } else if (!(S > T * (s + c))) msg = "Need S > T(sin θ + cos θ)";   // same as L > T
-      else L = (S - T * s) / c;
-      if (msg === "OK") Object.assign(g, { L, S, th, AF: L * c, BF: L * s, AE: T * s, DE: T * c });
+      th = v.A * DEG;
+      const c = Math.cos(th), s = Math.sin(th);
+      if (key === "LA") { L = v.L; if (!(L > T)) msg = "Need L > T"; }
+      else if (key === "SA") { if (!(v.S > T * (s + c))) msg = "Need S > T(sin θ + cos θ)"; else L = (v.S - T * s) / c; }
+      else if (!(v.H > T * (s + c))) msg = "Need H > T(sin θ + cos θ)";
+      else L = (v.H - T * c) / s;
+    }
+
+    if (msg === "OK") {
+      const c = Math.cos(th), s = Math.sin(th);
+      Object.assign(g, { L, th, S: L * c + T * s, H: L * s + T * c, AF: L * c, BF: L * s, AE: T * s, DE: T * c });
     }
 
     g.geomOk = msg === "OK";
@@ -463,25 +508,27 @@ svg text { font-family: var(--font-mono); }
 
   // ---------- Page ----------
   function render() {
-    const m = mode();
+    const key = pairKey();
     $("row-t").hidden = inSame.checked;
     GEO.forEach((k) => {
-      const isCalc = k === m;
+      const isCalc = !entered.includes(k);
       field[k].closest(".in-row").classList.toggle("is-calc", isCalc);
       field[k].readOnly = isCalc;
       field[k].tabIndex = isCalc ? -1 : 0;
-      $("f-" + k).classList.toggle("active", isCalc);
+      picks[k].checked = !isCalc;
+    });
+    F_IDS.forEach((id) => $(id).classList.toggle("active", USES[key].includes(id)));
+
+    const g = solve(key, {
+      L: read("L"), S: read("S"), A: read("A"), H: read("H"), T: read("T"), t: read("t"), same: inSame.checked
     });
 
-    const g = solve(m, {
-      L: read("L"), S: read("S"), A: read("A"), T: read("T"), t: read("t"), same: inSame.checked
+    GEO.filter((k) => !entered.includes(k)).forEach((k) => {
+      const val = k === "A" ? g.deg : g[k];
+      if (g.geomOk && Number.isFinite(val)) { exact[k] = val; shown[k] = val.toFixed(DIGITS[k]); }
+      else { exact[k] = NaN; shown[k] = "—"; }
+      field[k].value = shown[k];
     });
-
-    const calcVal = m === "A" ? g.deg : g[m];
-    if (g.geomOk && Number.isFinite(calcVal)) { exact[m] = calcVal; shown[m] = calcVal.toFixed(DIGITS[m]); }
-    else { exact[m] = NaN; shown[m] = "—"; }
-    field[m].value = shown[m];
-    $("in-h").value = g.geomOk ? fmt(g.BF + g.DE, 3) : "—";   // FC′ = BF + BC′, always calculated
 
     Object.keys(field).forEach((k) => field[k].setAttribute("aria-invalid", String(g.badField === k)));
 
@@ -491,11 +538,12 @@ svg text { font-family: var(--font-mono); }
       el.closest(".out-row").classList.toggle("bad", k === "FH" || k === "BH" ? !g.ok : !g.geomOk);
     });
 
-    $("i-d2").hidden = $("i-r").hidden = m !== "A";
+    $("i-d2").hidden = $("i-r").hidden = !(key === "LS" || key === "LH");
+    $("r-lbl").textContent = key === "LH" ? "r = √(L² + T² − H²)" : "r = √(L² + T² − S²)";
     $("o-d2").textContent = fmt(g.d2, 3);
     $("o-r").textContent = fmt(g.r, 3);
     $("o-tu").textContent = fmt(g.t, 3);
-    $("rule-hint").textContent = HINTS[m];
+    $("rule-hint").textContent = HINTS[key];
 
     const c = $("check");
     c.classList.toggle("ok", g.ok);
@@ -659,13 +707,15 @@ svg text { font-family: var(--font-mono); }
   }
 
   // ---------- State ----------
+  const validPair = (a) => Array.isArray(a) && a.length === 2 && a[0] !== a[1] && a.every((k) => GEO.includes(k));
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY) || "null");
       if (!s || typeof s !== "object") return;
       Object.keys(field).forEach((k) => { if (typeof s[k] === "string") field[k].value = s[k]; });
       inSame.checked = !!s.same;
-      if (radios[s.calc]) radios[s.calc].checked = true;
+      if (validPair(s.entered)) entered = s.entered.slice();
+      else if (s.calc) entered = { A: ["L", "S"], S: ["L", "A"], L: ["S", "A"] }[s.calc] || entered;   // older saves
       GEO.forEach((k) => {
         const sh = s.shown && s.shown[k], ex = s.exact && s.exact[k];
         if (typeof sh === "string" && typeof ex === "number" && field[k].value === sh) { shown[k] = sh; exact[k] = ex; }
@@ -677,14 +727,24 @@ svg text { font-family: var(--font-mono); }
       const v = {};
       Object.keys(field).forEach((k) => { v[k] = field[k].value; });
       localStorage.setItem(KEY, JSON.stringify(Object.assign(v, {
-        calc: mode(), same: inSame.checked, shown: Object.assign({}, shown), exact: Object.assign({}, exact)
+        entered: entered.slice(), same: inSame.checked, shown: Object.assign({}, shown), exact: Object.assign({}, exact)
       })));
     } catch (e) {}
   }
 
-  // A typed value replaces any exact value kept from when that field was calculated.
+  // Ticking a value makes it entered; the entered value touched longest ago becomes calculated.
+  // A ticked box can't be unticked directly, since exactly two values are always entered.
+  function pick(k) {
+    if (entered.includes(k)) { picks[k].checked = true; return; }
+    entered.push(k);
+    if (entered.length > 2) entered.shift();
+    render();
+  }
+  // Typing into a value counts as touching it, and drops any exact value kept from when it was calculated.
   function edited(key) {
     if (key in shown) shown[key] = exact[key] = null;
+    const i = entered.indexOf(key);
+    if (i !== -1) { entered.splice(i, 1); entered.push(key); }
     render();
   }
   function step(e) {
@@ -705,13 +765,13 @@ svg text { font-family: var(--font-mono); }
     field[k].addEventListener("keydown", step);
   });
   inSame.addEventListener("change", render);
-  GEO.forEach((k) => radios[k].addEventListener("change", render));
+  GEO.forEach((k) => picks[k].addEventListener("change", () => pick(k)));
   $("form").addEventListener("submit", (e) => e.preventDefault());
   $("reset").addEventListener("click", () => {
     Object.keys(field).forEach((k) => { field[k].value = DEFAULTS[k]; });
     GEO.forEach((k) => { shown[k] = exact[k] = null; });
     inSame.checked = DEFAULTS.same;
-    radios[DEFAULTS.calc].checked = true;
+    entered = DEFAULTS.entered.slice();
     render();
   });
   render();
