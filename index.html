@@ -332,7 +332,7 @@ svg text { font-family: var(--font-mono); }
     <section class="panel drawing" aria-labelledby="h-drawing">
       <h2 id="h-drawing">Layout, to scale</h2>
       <div class="sheet"><svg id="svg" viewBox="0 0 680 480" role="img" aria-label="Scaled drawing of the board, support and color-coded segments"></svg></div>
-      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows. The support's height doesn't matter, only its thickness GH.</p>
+      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows. The support's height doesn't matter, only its thickness GH = t.</p>
     </section>
   </div>
 
@@ -575,6 +575,10 @@ svg text { font-family: var(--font-mono); }
 
     s += `<polygon points="${[A, B, C, D].map((p) => f1(p[0]) + "," + f1(p[1])).join(" ")}" fill="var(--board-fill)" class="ink-line" stroke-width="${f1(1.5 * u)}" stroke-linejoin="round"/>`;
 
+    // C projected horizontally onto the right wall
+    const Cp = [F[0], C[1]];
+    s += line(C[0], C[1], Cp[0], Cp[1], `class="guide" stroke-width="${f1(u)}" stroke-dasharray="${f1(2 * u)} ${f1(3 * u)}"`);
+
     // Angle arc at A, kept between A and the right vertical
     const room = F[0] - A[0];
     const ra = Math.max(10 * u, Math.min(36 * u, room - 8 * u));
@@ -600,7 +604,7 @@ svg text { font-family: var(--font-mono); }
     s += hDim(u, oy + 40 * u, A[0], F[0], COL.af, "AF", afX);
 
     // Points
-    const pts = [A, B, C, D, E, F].concat(support ? [[Gx, Hy], [F[0], Hy]] : []);
+    const pts = [A, B, C, D, E, F, Cp].concat(support ? [[Gx, Hy], [F[0], Hy]] : []);
     pts.forEach((p) => { s += `<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="${f1(3 * u)}" fill="var(--ink)"/>`; });
 
     // Vertex labels sit on each corner's outward bisector (screen y points down)
@@ -613,7 +617,8 @@ svg text { font-family: var(--font-mono); }
       { ...out(0.7, 0.7, 20, F), ch: "F" },
       { ...out(dirD[0], dirD[1], 15, D), ch: "D" },
       { x: B[0] + 14 * u, y: B[1] - 8 * u, dx: 0.6, dy: -0.8, ch: "B" },
-      { ...out(dirC[0], dirC[1], 15, C), ch: "C" }
+      { ...out(dirC[0], dirC[1], 15, C), ch: "C" },
+      { x: Cp[0] + 14 * u, y: Cp[1], dx: 0.6, dy: -0.8, ch: "C′" }
     ];
     if (support) {
       specs.push({ x: F[0] + 14 * u, y: Hy + 2 * u, dx: 0.3, dy: 0.95, ch: "H" });
