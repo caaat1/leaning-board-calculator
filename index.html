@@ -88,12 +88,12 @@ body {
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.45;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 28px 40px;
 }
-.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
 
 header { display: grid; gap: 6px; }
 .eyebrow {
@@ -111,9 +111,9 @@ h1 {
 
 .panel {
   background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
-  padding: 18px 18px 20px; min-width: 0;
+  padding: 16px 18px; min-width: 0;
 }
-.calc { display: grid; gap: 18px; }
+.calc { display: grid; gap: 14px; }
 h2 {
   font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--muted); margin: 0 0 8px;
@@ -124,7 +124,7 @@ h3 {
 }
 
 /* Inputs */
-.inputs { display: grid; gap: 14px; }
+.inputs { display: grid; gap: 10px; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 4px; }
 legend { padding: 0; margin-bottom: 4px; }
 .group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -132,13 +132,13 @@ legend { padding: 0; margin-bottom: 4px; }
 
 .in-row {
   display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) 118px; align-items: center; gap: 10px;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 .in-row .sym { font-family: var(--font-mono); font-weight: 500; font-size: 16px; }
 .in-row .lbl { color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .in-row input.num {
   width: 100%; font: 500 15px var(--font-mono); text-align: right;
-  padding: 7px 9px; color: var(--ink);
+  padding: 6px 9px; color: var(--ink);
   background: var(--input-bg); border: 1px solid var(--input-rule); border-radius: 4px;
   font-variant-numeric: tabular-nums;
 }
@@ -176,11 +176,11 @@ legend { padding: 0; margin-bottom: 4px; }
 /* Results */
 .results { display: grid; gap: 4px; }
 .out-row {
-  display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 10px;
-  padding: 8px 10px; border-radius: 4px;
+  display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 6px 10px; border-radius: 4px;
   background: var(--row-bg, transparent); color: var(--row-fg, var(--ink));
 }
-.out-row .sym { font-family: var(--font-mono); font-weight: 500; }
+.out-row .sym { font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
 .out-row .formula { font-family: var(--font-mono); font-size: 12px; opacity: .8; min-width: 0; overflow-wrap: anywhere; }
 .out-row .val {
   font-family: var(--font-mono); font-weight: 500; font-size: 16px; text-align: right;
@@ -237,11 +237,11 @@ svg text { font-family: var(--font-mono); }
 .msg { fill: var(--bad-fg); font-family: var(--font-body); }
 
 /* Formulas */
-.formulas { display: grid; gap: 14px; }
+.formulas { display: grid; gap: 10px; line-height: 1.35; }
 .formulas p { margin: 0; color: var(--muted); max-width: 70ch; }
-.f-block { display: grid; gap: 6px; }
-.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 18px; }
-.f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; padding: 3px 6px; border-radius: 3px; }
+.f-block { display: grid; gap: 4px; }
+.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2px 18px; }
+.f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; padding: 2px 6px; border-radius: 3px; }
 .f-grid code.active { background: var(--calc-bg); color: var(--calc-fg); }
 .f-grid .k { font-weight: 500; }
 .formulas .f-note { font-family: var(--font-mono); font-size: 12.5px; padding-left: 6px; }
@@ -251,7 +251,7 @@ svg text { font-family: var(--font-mono); }
 @media (max-width: 420px) {
   .in-row { grid-template-columns: 22px 28px minmax(0, 1fr) 100px; }
   .same { padding-left: 32px; }
-  .out-row { grid-template-columns: 40px 1fr; }
+  .out-row { grid-template-columns: auto 1fr; }
   .out-row .formula { display: none; }
 }
 </style>
@@ -270,7 +270,7 @@ svg text { font-family: var(--font-mono); }
         <h2 id="h-inputs">Inputs</h2>
         <form class="inputs" id="form" novalidate>
           <fieldset>
-            <legend class="group-head"><h3>Geometry</h3><span class="group-note">● = calculated</span></legend>
+            <legend class="group-head"><h3>Geometry</h3><span class="group-note">● calculated</span></legend>
             <div class="in-row">
               <label class="pick" title="Calculate L"><input type="radio" name="calc" id="calc-L" value="L" aria-label="Calculate L"></label>
               <span class="sym">L</span>
@@ -294,7 +294,7 @@ svg text { font-family: var(--font-mono); }
           <fieldset>
             <legend class="group-head"><h3>Boards</h3></legend>
             <div class="in-row"><span aria-hidden="true"></span><span class="sym">T</span><label class="lbl" for="in-T">Thickness, AD</label><input class="num" id="in-T" data-key="T" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="80"></div>
-            <label class="same" for="in-same"><input id="in-same" type="checkbox"> t=T</label>
+            <label class="same" for="in-same"><input id="in-same" type="checkbox"> t = T</label>
             <div class="in-row" id="row-t"><span aria-hidden="true"></span><span class="sym">t</span><label class="lbl" for="in-t">Support thickness, GH</label><input class="num" id="in-t" data-key="t" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="120"></div>
           </fieldset>
           <div class="hints">
@@ -309,8 +309,8 @@ svg text { font-family: var(--font-mono); }
         <div class="results" aria-labelledby="h-results" aria-live="polite">
           <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L cos θ</span><span class="val" id="o-AF">—</span></div>
           <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ</span><span class="val" id="o-BF">—</span></div>
-          <div class="out-row r-ae"><span class="sym">AE</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
-          <div class="out-row r-de"><span class="sym">DE</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
+          <div class="out-row r-ae"><span class="sym">AE = CC′</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
+          <div class="out-row r-de"><span class="sym">DE = BC′</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
           <div class="out-row r-fh"><span class="sym">FH</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
         </div>
       </div>
@@ -352,8 +352,8 @@ svg text { font-family: var(--font-mono); }
       <div class="f-grid">
         <code><span class="k k-af">AF</span> = L cos θ</code>
         <code><span class="k k-bf">BF</span> = L sin θ</code>
-        <code><span class="k k-ae">AE</span> = T sin θ</code>
-        <code><span class="k k-de">DE</span> = T cos θ</code>
+        <code><span class="k k-ae">AE</span> = <span class="k k-ae">CC′</span> = T sin θ</code>
+        <code><span class="k k-de">DE</span> = <span class="k k-de">BC′</span> = T cos θ</code>
         <code><span class="k k-fh">FH</span> = BF(AF − t) / AF</code>
       </div>
     </div>
