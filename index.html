@@ -236,6 +236,7 @@ svg text { font-family: var(--font-mono); }
 .f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; padding: 3px 6px; border-radius: 3px; }
 .f-grid code.active { background: var(--calc-bg); color: var(--calc-fg); }
 .f-grid .k { font-weight: 500; }
+.formulas .f-note { font-family: var(--font-mono); font-size: 12.5px; padding-left: 6px; }
 .k-af { color: var(--af-line); } .k-bf { color: var(--bf-line); } .k-ae { color: var(--ae-line); }
 .k-de { color: var(--de-line); } .k-fh { color: var(--fh-line); }
 
@@ -331,10 +332,11 @@ svg text { font-family: var(--font-mono); }
     <div class="f-block">
       <h3>Calculated value</h3>
       <div class="f-grid">
-        <code id="f-A"><span class="k">θ</span> = atan2(TS + Lr, LS − Tr), r = √(L² + T² − S²)</code>
+        <code id="f-A"><span class="k">θ</span> = atan2(TS + Lr, LS − Tr)</code>
         <code id="f-S"><span class="k">S</span> = L cos θ + T sin θ</code>
         <code id="f-L"><span class="k">L</span> = (S − T sin θ) / cos θ</code>
       </div>
+      <p class="f-note">where r = √(L² + T² − S²)</p>
     </div>
     <div class="f-block">
       <h3>Segments</h3>
