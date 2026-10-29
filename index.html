@@ -179,7 +179,7 @@ legend { padding: 0; margin-bottom: 4px; }
 /* Results */
 .results { display: grid; gap: 4px; }
 .out-row {
-  display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: center; gap: 10px;
   padding: 6px 10px; border-radius: 4px;
   background: var(--row-bg, transparent); color: var(--row-fg, var(--ink));
 }
@@ -284,7 +284,7 @@ svg text { font-family: var(--font-mono); }
             <div class="in-row">
               <label class="pick" title="Calculate S"><input type="radio" name="calc" id="calc-S" value="S" aria-label="Calculate S"></label>
               <span class="sym">S</span>
-              <label class="lbl" for="in-S">Span, EF <span class="tag">calculated</span></label>
+              <label class="lbl" for="in-S">Span, A′F <span class="tag">calculated</span></label>
               <input class="num" id="in-S" data-key="S" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="421">
             </div>
             <div class="in-row">
@@ -313,10 +313,10 @@ svg text { font-family: var(--font-mono); }
         <div class="results" aria-labelledby="h-results" aria-live="polite">
           <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L cos θ</span><span class="val" id="o-AF">—</span></div>
           <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ</span><span class="val" id="o-BF">—</span></div>
-          <div class="out-row r-ae"><span class="sym">AE = CC′</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
-          <div class="out-row r-de"><span class="sym">DE = BC′</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
-          <div class="out-row r-fh"><span class="sym">FH</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
-          <div class="out-row r-bh"><span class="sym">BH</span><span class="formula">BF − FH</span><span class="val" id="o-BH">—</span></div>
+          <div class="out-row r-ae"><span class="sym">AA′ = CC′</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
+          <div class="out-row r-de"><span class="sym">DA′ = BC′</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
+          <div class="out-row r-fh"><span class="sym">FG</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
+          <div class="out-row r-bh"><span class="sym">BG</span><span class="formula">BF − FG</span><span class="val" id="o-BH">—</span></div>
         </div>
       </div>
 
@@ -357,10 +357,10 @@ svg text { font-family: var(--font-mono); }
       <div class="f-grid">
         <code><span class="k k-af">AF</span> = L cos θ</code>
         <code><span class="k k-bf">BF</span> = L sin θ</code>
-        <code><span class="k k-ae">AE</span> = <span class="k k-ae">CC′</span> = T sin θ</code>
-        <code><span class="k k-de">DE</span> = <span class="k k-de">BC′</span> = T cos θ</code>
-        <code><span class="k k-fh">FH</span> = BF(AF − t) / AF</code>
-        <code><span class="k k-bh">BH</span> = BF − FH = t tan θ</code>
+        <code><span class="k k-ae">AA′</span> = <span class="k k-ae">CC′</span> = T sin θ</code>
+        <code><span class="k k-de">DA′</span> = <span class="k k-de">BC′</span> = T cos θ</code>
+        <code><span class="k k-fh">FG</span> = BF(AF − t) / AF</code>
+        <code><span class="k k-bh">BG</span> = BF − FG = t tan θ</code>
       </div>
     </div>
   </section>
@@ -406,7 +406,7 @@ svg text { font-family: var(--font-mono); }
 
   // ---------- Geometry ----------
   // Returns every segment for the chosen mode. Geometry and the support are checked
-  // separately: a bad t only affects FH, never the board's layout.
+  // separately: a bad t only affects FG and BG, never the board's layout.
   function solve(m, v) {
     const T = v.T, t = v.same ? v.T : v.t;
     const g = { m, T, t, L: NaN, S: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null };
@@ -602,16 +602,16 @@ svg text { font-family: var(--font-mono); }
     }
 
     // Dimensions
-    s += vDim(u, E[0] - 36 * u, D[1], oy, COL.de, "DE", "left");
-    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.fh, "FH", "right") + vDim(u, F[0] + 36 * u, B[1], Hy, COL.bh, "BH", "right");
+    s += vDim(u, E[0] - 36 * u, D[1], oy, COL.de, "DA′", "left");
+    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.fh, "FG", "right") + vDim(u, F[0] + 36 * u, B[1], Hy, COL.bh, "BG", "right");
     s += vDim(u, F[0] + 82 * u, B[1], oy, COL.bf, "BF", "right");
     let aeX = (E[0] + A[0]) / 2, afX = (A[0] + F[0]) / 2;
     if (afX - aeX < 24 * u) { const mid = (aeX + afX) / 2; aeX = mid - 12 * u; afX = mid + 12 * u; }
-    s += hDim(u, oy + 40 * u, E[0], A[0], COL.ae, "AE", aeX);
+    s += hDim(u, oy + 40 * u, E[0], A[0], COL.ae, "AA′", aeX);
     s += hDim(u, oy + 40 * u, A[0], F[0], COL.af, "AF", afX);
 
     // Points
-    const pts = [A, B, C, D, E, F, Cp].concat(support ? [[Gx, Hy], [F[0], Hy]] : []);
+    const pts = [A, B, C, D, E, F, Cp].concat(support ? [[Gx, Hy], [F[0], Hy], [Gx, oy]] : []);
     pts.forEach((p) => { s += `<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="${f1(3 * u)}" fill="var(--ink)"/>`; });
 
     // Vertex labels sit on each corner's outward bisector (screen y points down)
@@ -620,7 +620,7 @@ svg text { font-family: var(--font-mono); }
     const dirG = unit(Math.cos(225 * DEG + half), -Math.sin(225 * DEG + half));
     const specs = [
       { ...out(0, 1, 18, A), ch: "A" },
-      { ...out(-0.7, 0.7, 20, E), ch: "E" },
+      { ...out(-0.7, 0.7, 20, E), ch: "A′" },
       { ...out(0.7, 0.7, 20, F), ch: "F" },
       { ...out(dirD[0], dirD[1], 15, D), ch: "D" },
       { x: B[0] + 14 * u, y: B[1] - 8 * u, dx: 0.6, dy: -0.8, ch: "B" },
@@ -628,8 +628,9 @@ svg text { font-family: var(--font-mono); }
       { x: Cp[0] + 14 * u, y: Cp[1], dx: 0.6, dy: -0.8, ch: "C′" }
     ];
     if (support) {
-      specs.push({ x: F[0] + 14 * u, y: Hy + 2 * u, dx: 0.3, dy: 0.95, ch: "H" });
-      specs.push({ ...out(dirG[0], dirG[1], 20, [Gx, Hy]), ch: "G" });
+      specs.push({ x: F[0] + 14 * u, y: Hy + 2 * u, dx: 0.3, dy: 0.95, ch: "G" });
+      specs.push({ ...out(dirG[0], dirG[1], 20, [Gx, Hy]), ch: "H" });
+      specs.push({ ...out(0, 1, 18, [Gx, oy]), ch: "E" });
     }
     s += placeLabels(u, specs);
     if (support && F[0] - Gx >= 14 * u) {
