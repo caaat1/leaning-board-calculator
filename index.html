@@ -39,6 +39,7 @@
   --ae-line: #1D9E75; --ae-text: #0F6E56; --ae-bg: #9FE1CB; --ae-fg: #04342C;
   --de-line: #D4537E; --de-text: #993556; --de-bg: #F4C0D1; --de-fg: #4B1528;
   --fh-line: #BA7517; --fh-text: #854F0B; --fh-bg: #FAC775; --fh-fg: #412402;
+  --bh-line: #378ADD; --bh-text: #185FA5; --bh-bg: #B5D4F4; --bh-fg: #042C53;
 
   --ok-bg: #e4f0d6; --ok-fg: #3B6D11;
   --bad-bg: #fbe5e5; --bad-fg: #A32D2D;
@@ -59,6 +60,7 @@
     --ae-text: #5DCAA5; --ae-bg: #085041; --ae-fg: #9FE1CB;
     --de-text: #ED93B1; --de-bg: #72243E; --de-fg: #F4C0D1;
     --fh-text: #EF9F27; --fh-bg: #633806; --fh-fg: #FAC775;
+    --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
     --ok-bg: #27500A; --ok-fg: #C0DD97;
     --bad-bg: #791F1F; --bad-fg: #F7C1C1;
     color-scheme: dark;
@@ -75,6 +77,7 @@
   --ae-text: #5DCAA5; --ae-bg: #085041; --ae-fg: #9FE1CB;
   --de-text: #ED93B1; --de-bg: #72243E; --de-fg: #F4C0D1;
   --fh-text: #EF9F27; --fh-bg: #633806; --fh-fg: #FAC775;
+  --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
   --ok-bg: #27500A; --ok-fg: #C0DD97;
   --bad-bg: #791F1F; --bad-fg: #F7C1C1;
   color-scheme: dark;
@@ -192,6 +195,7 @@ legend { padding: 0; margin-bottom: 4px; }
 .r-ae { --row-bg: var(--ae-bg); --row-fg: var(--ae-fg); }
 .r-de { --row-bg: var(--de-bg); --row-fg: var(--de-fg); }
 .r-fh { --row-bg: var(--fh-bg); --row-fg: var(--fh-fg); }
+.r-bh { --row-bg: var(--bh-bg); --row-fg: var(--bh-fg); }
 
 .check {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -246,7 +250,7 @@ svg text { font-family: var(--font-mono); }
 .f-grid .k { font-weight: 500; }
 .formulas .f-note { font-family: var(--font-mono); font-size: 12.5px; padding-left: 6px; }
 .k-af { color: var(--af-text); } .k-bf { color: var(--bf-text); } .k-ae { color: var(--ae-text); }
-.k-de { color: var(--de-text); } .k-fh { color: var(--fh-text); }
+.k-de { color: var(--de-text); } .k-fh { color: var(--fh-text); } .k-bh { color: var(--bh-text); }
 
 @media (max-width: 420px) {
   .in-row { grid-template-columns: 22px 28px minmax(0, 1fr) 100px; }
@@ -312,6 +316,7 @@ svg text { font-family: var(--font-mono); }
           <div class="out-row r-ae"><span class="sym">AE = CC′</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
           <div class="out-row r-de"><span class="sym">DE = BC′</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
           <div class="out-row r-fh"><span class="sym">FH</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
+          <div class="out-row r-bh"><span class="sym">BH</span><span class="formula">BF − FH</span><span class="val" id="o-BH">—</span></div>
         </div>
       </div>
 
@@ -355,6 +360,7 @@ svg text { font-family: var(--font-mono); }
         <code><span class="k k-ae">AE</span> = <span class="k k-ae">CC′</span> = T sin θ</code>
         <code><span class="k k-de">DE</span> = <span class="k k-de">BC′</span> = T cos θ</code>
         <code><span class="k k-fh">FH</span> = BF(AF − t) / AF</code>
+        <code><span class="k k-bh">BH</span> = BF − FH = t tan θ</code>
       </div>
     </div>
   </section>
@@ -403,7 +409,7 @@ svg text { font-family: var(--font-mono); }
   // separately: a bad t only affects FH, never the board's layout.
   function solve(m, v) {
     const T = v.T, t = v.same ? v.T : v.t;
-    const g = { m, T, t, L: NaN, S: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, badField: null };
+    const g = { m, T, t, L: NaN, S: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null };
     let msg = "OK";
 
     const missing = NEEDS[m].find((k) => !Number.isFinite(v[k]));
@@ -441,7 +447,7 @@ svg text { font-family: var(--font-mono); }
     if (g.geomOk) {
       if (!Number.isFinite(t)) { msg = "Enter a number for t"; g.badField = "t"; }
       else if (!(t > 0 && t < g.AF)) msg = "Need 0 < t < AF";
-      else g.FH = g.BF * (g.AF - t) / g.AF;
+      else { g.FH = g.BF * (g.AF - t) / g.AF; g.BH = g.BF - g.FH; }
     }
     g.deg = g.th / DEG;
     g.msg = msg;
@@ -472,10 +478,10 @@ svg text { font-family: var(--font-mono); }
 
     Object.keys(field).forEach((k) => field[k].setAttribute("aria-invalid", String(g.badField === k)));
 
-    ["AF", "BF", "AE", "DE", "FH"].forEach((k) => {
+    ["AF", "BF", "AE", "DE", "FH", "BH"].forEach((k) => {
       const el = $("o-" + k);
       el.textContent = fmt(g[k], 3);
-      el.closest(".out-row").classList.toggle("bad", k === "FH" ? !g.ok : !g.geomOk);
+      el.closest(".out-row").classList.toggle("bad", k === "FH" || k === "BH" ? !g.ok : !g.geomOk);
     });
 
     $("i-d2").hidden = $("i-r").hidden = m !== "A";
@@ -497,7 +503,7 @@ svg text { font-family: var(--font-mono); }
   const COL = {
     af: ["var(--af-line)", "var(--af-text)"], bf: ["var(--bf-line)", "var(--bf-text)"],
     ae: ["var(--ae-line)", "var(--ae-text)"], de: ["var(--de-line)", "var(--de-text)"],
-    fh: ["var(--fh-line)", "var(--fh-text)"]
+    fh: ["var(--fh-line)", "var(--fh-text)"], bh: ["var(--bh-line)", "var(--bh-text)"]
   };
   const f1 = (n) => n.toFixed(1);
   const line = (x1, y1, x2, y2, attrs) => `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" ${attrs}/>`;
@@ -597,7 +603,7 @@ svg text { font-family: var(--font-mono); }
 
     // Dimensions
     s += vDim(u, E[0] - 36 * u, D[1], oy, COL.de, "DE", "left");
-    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.fh, "FH", "right");
+    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.fh, "FH", "right") + vDim(u, F[0] + 36 * u, B[1], Hy, COL.bh, "BH", "right");
     s += vDim(u, F[0] + 82 * u, B[1], oy, COL.bf, "BF", "right");
     let aeX = (E[0] + A[0]) / 2, afX = (A[0] + F[0]) / 2;
     if (afX - aeX < 24 * u) { const mid = (aeX + afX) / 2; aeX = mid - 12 * u; afX = mid + 12 * u; }
