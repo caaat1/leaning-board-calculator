@@ -244,7 +244,7 @@ svg text { font-family: var(--font-mono); }
 .formulas { display: grid; gap: 10px; line-height: 1.35; }
 .formulas p { margin: 0; color: var(--muted); max-width: 70ch; }
 .f-block { display: grid; gap: 4px; }
-.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 2px 18px; align-items: start; }
+.f-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 2px 18px; align-items: start; }
 .f-grid code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; padding: 2px 6px; border-radius: 3px; }
 .f-grid code.active { background: var(--calc-bg); color: var(--calc-fg); }
 .f-grid .k { font-weight: 500; }
@@ -355,6 +355,8 @@ svg text { font-family: var(--font-mono); }
         <code id="f-thLS"><span class="k">θ</span> = atan2(TS + Lr, LS − Tr)</code>
         <code id="f-thLH"><span class="k">θ</span> = atan2(LH − Tr, TH + Lr)</code>
         <code id="f-thSH"><span class="k">θ</span>: H cos θ − S sin θ = T cos 2θ</code>
+      </div>
+      <div class="f-grid">
         <code id="f-LS"><span class="k">L</span> = (S − T sin θ) / cos θ</code>
         <code id="f-LH"><span class="k">L</span> = (H − T cos θ) / sin θ</code>
         <code id="f-S"><span class="k">S</span> = L cos θ + T sin θ</code>
