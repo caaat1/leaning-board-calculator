@@ -238,7 +238,7 @@ legend { padding: 0; margin-bottom: 4px; }
 details { border-top: 1px solid var(--rule); padding-top: 10px; }
 summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
 summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.inter { display: grid; gap: 4px; margin-top: 8px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.inter { display: grid; gap: 4px; padding-top: 8px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
 .inter div { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
 
 .actions { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
@@ -1217,27 +1217,29 @@ svg text { font-family: var(--font-mono); }
   try { fp.open = localStorage.getItem("leaning-board-formulas") === "open"; } catch (e) {}
   fp.addEventListener("toggle", () => { try { localStorage.setItem("leaning-board-formulas", fp.open ? "open" : "closed"); } catch (e) {} });
   // Fold and unfold smoothly: animate the height of the body, then flip the native open state
-  const fpBody = fp.querySelector(".formulas");
-  let fpAnim = null;
-  fp.querySelector("summary").addEventListener("click", (e) => {
-    if (!fpBody.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;   // plain toggle
-    e.preventDefault();
-    const opening = !fp.open || (fpAnim && fpAnim.closing);
-    if (fpAnim) { fpAnim.cancel(); fpAnim = null; }
-    fpBody.style.overflow = "hidden"; fpBody.style.boxSizing = "border-box";
-    if (!fp.open) fp.open = true;
-    const full = fpBody.offsetHeight;
-    const frames = opening ? [{ height: "0px", opacity: 0 }, { height: full + "px", opacity: 1 }]
-                           : [{ height: full + "px", opacity: 1 }, { height: "0px", opacity: 0 }];
-    const a = fpBody.animate(frames, { duration: 240, easing: "ease" });
-    a.closing = !opening; fpAnim = a;
-    const done = () => {
-      if (fpAnim !== a) return;
-      fpAnim = null; fpBody.style.overflow = ""; fpBody.style.boxSizing = "";
-      if (!opening) fp.open = false;
-    };
-    a.onfinish = done;
-  });
+  function smoothFold(det, body) {
+    let anim = null;
+    det.querySelector("summary").addEventListener("click", (e) => {
+      if (!body.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;   // plain toggle
+      e.preventDefault();
+      const opening = !det.open || (anim && anim.closing);
+      if (anim) { anim.cancel(); anim = null; }
+      body.style.overflow = "hidden"; body.style.boxSizing = "border-box";
+      if (!det.open) det.open = true;
+      const full = body.offsetHeight;
+      const frames = opening ? [{ height: "0px", opacity: 0 }, { height: full + "px", opacity: 1 }]
+                             : [{ height: full + "px", opacity: 1 }, { height: "0px", opacity: 0 }];
+      const a = body.animate(frames, { duration: 240, easing: "ease" });
+      a.closing = !opening; anim = a;
+      a.onfinish = () => {
+        if (anim !== a) return;
+        anim = null; body.style.overflow = ""; body.style.boxSizing = "";
+        if (!opening) det.open = false;
+      };
+    });
+  }
+  smoothFold(fp, fp.querySelector(".formulas"));
+  smoothFold($("inter"), $("inter").querySelector(".inter"));
   if (/^#v1-/.test(location.hash)) applyCode(location.hash.slice(1));   // a shared link wins over saved state
   document.querySelectorAll('input[name="round"]').forEach((el) => {
     el.checked = el.value === roundTo;
