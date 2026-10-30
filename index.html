@@ -42,6 +42,7 @@
   --bh-line: #378ADD; --bh-text: #185FA5; --bh-bg: #B5D4F4; --bh-fg: #042C53;
 
   --ok-bg: #e4f0d6; --ok-fg: #3B6D11;
+  --warn-bg: #FAEEDA; --warn-fg: #854F0B;
   --bad-bg: #fbe5e5; --bad-fg: #A32D2D;
 
   --font-display: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
@@ -62,6 +63,7 @@
     --fh-text: #EF9F27; --fh-bg: #633806; --fh-fg: #FAC775;
     --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
     --ok-bg: #27500A; --ok-fg: #C0DD97;
+    --warn-bg: #633806; --warn-fg: #FAC775;
     --bad-bg: #791F1F; --bad-fg: #F7C1C1;
     color-scheme: dark;
   }
@@ -79,6 +81,7 @@
   --fh-text: #EF9F27; --fh-bg: #633806; --fh-fg: #FAC775;
   --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
   --ok-bg: #27500A; --ok-fg: #C0DD97;
+  --warn-bg: #633806; --warn-fg: #FAC775;
   --bad-bg: #791F1F; --bad-fg: #F7C1C1;
   color-scheme: dark;
 }
@@ -99,6 +102,13 @@ body {
 .wrap { max-width: 1680px; margin: 0 auto; display: grid; gap: 18px; }
 
 header { display: grid; gap: 6px; }
+.head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.theme { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+.theme label { position: relative; cursor: pointer; }
+.theme input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.theme span { display: block; font: 500 12px var(--font-mono); padding: 3px 10px; border-radius: 4px; color: var(--muted); }
+.theme input:checked + span { background: var(--calc-bg); color: var(--calc-fg); }
+.theme input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
 .eyebrow {
   font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em;
   text-transform: uppercase; color: var(--accent);
@@ -203,6 +213,7 @@ legend { padding: 0; margin-bottom: 4px; }
 }
 .check.ok { background: var(--ok-bg); color: var(--ok-fg); }
 .check.bad { background: var(--bad-bg); color: var(--bad-fg); }
+.check.warn { background: var(--warn-bg); color: var(--warn-fg); }
 .check span:first-child { font-family: var(--font-display); letter-spacing: .06em; text-transform: uppercase; font-size: 13px; }
 .check span:last-child { text-align: right; }
 
@@ -263,7 +274,14 @@ svg text { font-family: var(--font-mono); }
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Board · support · span</div>
+    <div class="head-row">
+      <div class="eyebrow">Board · support · span</div>
+      <div class="theme" role="radiogroup" aria-label="Color theme">
+        <label><input type="radio" name="theme" value="auto" checked><span>Auto</span></label>
+        <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+        <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
+      </div>
+    </div>
     <h1>Leaning Board Calculator</h1>
     <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, H and ∠BAF, and the page works out the other two along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
   </header>
@@ -274,7 +292,7 @@ svg text { font-family: var(--font-mono); }
         <h2 id="h-inputs">Inputs</h2>
         <form class="inputs" id="form" novalidate>
           <fieldset>
-            <legend class="group-head"><h3>Geometry</h3><span class="group-note">Tick the two you know</span></legend>
+            <legend class="group-head"><h3>Geometry</h3><span class="group-note">Tick any two to set; the rest follow</span></legend>
             <div class="in-row">
               <label class="pick" title="Enter L"><input type="checkbox" id="pick-L" aria-label="Enter L" checked></label>
               <span class="sym">L</span>
@@ -317,8 +335,8 @@ svg text { font-family: var(--font-mono); }
       <div>
         <h2 id="h-results">Results</h2>
         <div class="results" aria-labelledby="h-results" aria-live="polite">
-          <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L cos θ</span><span class="val" id="o-AF">—</span></div>
-          <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ</span><span class="val" id="o-BF">—</span></div>
+          <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L cos θ = S − AA′</span><span class="val" id="o-AF">—</span></div>
+          <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ = H − BC′</span><span class="val" id="o-BF">—</span></div>
           <div class="out-row r-ae"><span class="sym">AA′ = CC′</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
           <div class="out-row r-de"><span class="sym">DA′ = BC′</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
           <div class="out-row r-fh"><span class="sym">FG</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
@@ -343,7 +361,7 @@ svg text { font-family: var(--font-mono); }
     <section class="panel drawing" aria-labelledby="h-drawing">
       <h2 id="h-drawing">Layout, to scale</h2>
       <div class="sheet"><svg id="svg" viewBox="0 0 680 480" role="img" aria-label="Scaled drawing of the board, support and color-coded segments"></svg></div>
-      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows. The support's height doesn't matter, only its thickness GH = t.</p>
+      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows. The support's height doesn't matter, only its thickness t = GH.</p>
     </section>
   </div>
 
@@ -367,8 +385,8 @@ svg text { font-family: var(--font-mono); }
     <div class="f-block">
       <h3>Segments</h3>
       <div class="f-grid">
-        <code><span class="k k-af">AF</span> = L cos θ</code>
-        <code><span class="k k-bf">BF</span> = L sin θ</code>
+        <code><span class="k k-af">AF</span> = L cos θ = S − <span class="k k-ae">AA′</span></code>
+        <code><span class="k k-bf">BF</span> = L sin θ = H − <span class="k k-de">BC′</span></code>
         <code><span class="k k-ae">AA′</span> = <span class="k k-ae">CC′</span> = T sin θ</code>
         <code><span class="k k-de">DA′</span> = <span class="k k-de">BC′</span> = T cos θ</code>
         <code><span class="k k-fh">FG</span> = BF(AF − t) / AF</code>
@@ -387,8 +405,8 @@ svg text { font-family: var(--font-mono); }
   const NAMES = { L: "L", S: "S", A: "∠BAF", H: "H", T: "T", t: "t" };
   const DIGITS = { L: 3, S: 3, A: 2, H: 3 };
   const HINTS = {
-    LS: "Valid when T < S < L and 0 < t < AF. For S ≥ L, enter ∠BAF instead.",
-    LH: "Valid when T < H < L and 0 < t < AF. For H ≥ L, enter ∠BAF instead.",
+    LS: "Valid when T < S ≤ L and 0 < t < AF. A span between L and √(L² + T²) fits two angles, so enter the one you want as ∠BAF.",
+    LH: "Valid when T < H ≤ L and 0 < t < AF. A height between L and √(L² + T²) fits two angles, so enter the one you want as ∠BAF.",
     SH: "Valid when S > T, H > T, only one angle fits, and 0 < t < AF.",
     LA: "Valid when 0° < ∠BAF < 90°, L > T and 0 < t < AF.",
     SA: "Valid when 0° < ∠BAF < 90°, S > T(sin θ + cos θ) and 0 < t < AF.",
@@ -452,25 +470,33 @@ svg text { font-family: var(--font-mono); }
   // separately: a bad t only affects FG and BG, never the board's layout.
   function solve(key, v) {
     const T = v.T, t = v.same ? v.T : v.t;
-    const g = { key, T, t, L: NaN, S: NaN, H: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null };
+    const g = { key, T, t, L: NaN, S: NaN, H: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null, warn: "" };
     let msg = "OK", th = NaN, L = NaN;
 
     const missing = key.split("").concat("T").find((k) => !Number.isFinite(v[k]));
     if (missing) { msg = "Enter a number for " + NAMES[missing]; g.badField = missing; }
     else if (!(T > 0)) msg = "Need T > 0";
     else if (key === "LS" || key === "LH") {
-      // L and one side of the bounding box: closed form, with a single root below L.
+      // L and one side of the bounding box, closed form. Up to L there is one layout.
+      // Between L and the diagonal √(L² + T²) the board can also wedge at a flatter angle.
       const n = key[1], W = v[n];
       L = v.L;
       const d2 = L * L + T * T;
       if (!(L > T)) msg = "Need L > T";
       else if (!(W > T)) msg = `Need ${n} > T`;
-      else if (!(W * W < d2)) msg = `Need ${n} < √(L² + T²)`;
-      else if (!(W < L)) msg = `${n} ≥ L allows two angles. Enter ∠BAF instead`;
+      else if (!(W * W <= d2)) msg = `Need ${n} ≤ √(L² + T²)`;
       else {
-        const r = Math.sqrt(d2 - W * W), p = (L * W - T * r) / d2, q = (T * W + L * r) / d2;
-        th = n === "S" ? Math.atan2(q, p) : Math.atan2(p, q);   // with H the roles of sin and cos swap
-        g.d2 = d2; g.r = r;
+        const r = Math.sqrt(Math.max(0, d2 - W * W));
+        // θ = atan2(TS ± Lr, LS ∓ Tr) for S; with H the roles of sin and cos swap
+        const ang = (sg) => (n === "S"
+          ? Math.atan2(T * W + sg * L * r, L * W - sg * T * r)
+          : Math.atan2(L * W - sg * T * r, T * W + sg * L * r));
+        const t1 = ang(1), t2 = ang(-1);
+        if (W > L && r > 0) msg = `Two angles fit: ${(t1 / DEG).toFixed(2)}° or ${(t2 / DEG).toFixed(2)}°. Enter one as ∠BAF`;
+        else {
+          th = t1; g.d2 = d2; g.r = r;
+          if (W === L) g.warn = n === "S" ? "S = L. The board would also fit lying flat" : "H = L. The board would also fit standing upright";
+        }
       }
     } else if (key === "SH") {
       if (!(v.S > T)) msg = "Need S > T";
@@ -478,7 +504,7 @@ svg text { font-family: var(--font-mono); }
       else {
         const roots = solveSH(v.S, v.H, T);
         if (roots.length === 0) msg = "No board longer than T fits this S and H";
-        else if (roots.length > 1) msg = "Several angles fit. Enter ∠BAF instead";
+        else if (roots.length > 1) msg = `Angles that fit: ${roots.map((a) => (a / DEG).toFixed(2) + "°").join(", ")}. Enter one as ∠BAF`;
         else { th = roots[0]; L = (v.S - T * Math.sin(th)) / Math.cos(th); }
       }
     } else if (!(v.A > 0 && v.A < 90)) msg = "Need 0° < ∠BAF < 90°";
@@ -548,9 +574,11 @@ svg text { font-family: var(--font-mono); }
     $("rule-hint").textContent = HINTS[key];
 
     const c = $("check");
-    c.classList.toggle("ok", g.ok);
+    const warn = g.ok && g.warn;                        // valid, but worth knowing about
+    c.classList.toggle("ok", g.ok && !warn);
+    c.classList.toggle("warn", !!warn);
     c.classList.toggle("bad", !g.ok);
-    $("check-msg").textContent = g.msg;
+    $("check-msg").textContent = warn ? g.warn : g.msg;
 
     draw(g);
     save();
@@ -629,15 +657,25 @@ svg text { font-family: var(--font-mono); }
     const sq = 10 * u, sqAttrs = `fill="none" class="guide" stroke-width="${f1(0.8 * u)}" opacity=".7"`;
     s += `<path d="M${f1(E[0] + sq)} ${f1(oy)} V${f1(oy - sq)} H${f1(E[0])}" ${sqAttrs}/>`;
     s += `<path d="M${f1(F[0] - sq)} ${f1(oy)} V${f1(oy - sq)} H${f1(F[0])}" ${sqAttrs}/>`;
+    // Right-angle mark at corner P, drawn along unit directions d1 and d2
+    const mark = (P, d1, d2, z) => `<path d="M${f1(P[0] + d1[0] * z)} ${f1(P[1] + d1[1] * z)} ` +
+      `L${f1(P[0] + (d1[0] + d2[0]) * z)} ${f1(P[1] + (d1[1] + d2[1]) * z)} L${f1(P[0] + d2[0] * z)} ${f1(P[1] + d2[1] * z)}" ${sqAttrs}/>`;
 
     if (support) {
       const solidH = Math.max(0, (oy - Hy) * 0.6), sw = `stroke="var(--support-line)" stroke-width="${f1(u)}"`;
       s += `<rect x="${f1(Gx)}" y="${f1(Hy)}" width="${f1(F[0] - Gx)}" height="${f1(solidH)}" fill="var(--support-fill)"/>`;
       s += `<path d="M${f1(Gx)} ${f1(Hy + solidH)} V${f1(Hy)} H${f1(F[0])}" fill="none" ${sw}/>`;
       s += line(Gx, Hy + solidH, Gx, oy - 4 * u, `${sw} stroke-dasharray="${f1(4 * u)} ${f1(4 * u)}"`);
+      const zs = Math.min(sq, 0.45 * (F[0] - Gx), 0.45 * solidH);     // G and H; F is marked with the walls
+      if (zs >= 4 * u) s += mark([F[0], Hy], [-1, 0], [0, 1], zs) + mark([Gx, Hy], [1, 0], [0, 1], zs);
     }
 
     s += `<polygon points="${[A, B, C, D].map((p) => f1(p[0]) + "," + f1(p[1])).join(" ")}" fill="var(--board-fill)" class="ink-line" stroke-width="${f1(1.5 * u)}" stroke-linejoin="round"/>`;
+
+    // Three right angles of the board are enough to show it's a rectangle: B, C, D
+    const ab = [cs, -sn], ad = [-sn, -cs], neg = (d) => [-d[0], -d[1]];   // screen directions of AB and AD
+    const zb = Math.min(sq, 0.45 * g.T * k, 0.45 * g.L * k);
+    if (zb >= 4 * u) s += mark(B, neg(ab), ad, zb) + mark(C, neg(ad), neg(ab), zb) + mark(D, ab, neg(ad), zb);
 
     // C projected horizontally onto the right wall
     const Cp = [F[0], C[1]];
@@ -707,6 +745,27 @@ svg text { font-family: var(--font-mono); }
       if (w !== lastW) { lastW = w; if (lastG) draw(lastG); }
     }).observe($("svg").parentElement);
   }
+
+  // ---------- Theme ----------
+  // Auto follows the system (or the hosting page); Light and Dark force a theme.
+  const THEME_KEY = "leaning-board-theme";
+  const root = document.documentElement;
+  const hostTheme = root.getAttribute("data-theme");
+  function applyTheme(v) {
+    if (v === "light" || v === "dark") root.setAttribute("data-theme", v);
+    else if (hostTheme) root.setAttribute("data-theme", hostTheme);
+    else root.removeAttribute("data-theme");
+  }
+  let themePref = "auto";
+  try { themePref = localStorage.getItem(THEME_KEY) || "auto"; } catch (e) {}
+  document.querySelectorAll('input[name="theme"]').forEach((el) => {
+    el.checked = el.value === themePref;
+    el.addEventListener("change", () => {
+      applyTheme(el.value);
+      try { localStorage.setItem(THEME_KEY, el.value); } catch (e) {}
+    });
+  });
+  applyTheme(themePref);
 
   // ---------- State ----------
   const validPair = (a) => Array.isArray(a) && a.length === 2 && a[0] !== a[1] && a.every((k) => GEO.includes(k));
