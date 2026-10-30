@@ -268,6 +268,7 @@ svg text { font-family: var(--font-mono); }
 .v-label { fill: var(--ink); font-weight: 500; }
 .d-label { font-weight: 500; }
 .ink-line { stroke: var(--ink); }
+.leader { stroke: var(--muted); }
 .guide { stroke: var(--muted); }
 .msg { fill: var(--bad-fg); font-family: var(--font-body); }
 
@@ -769,7 +770,15 @@ svg text { font-family: var(--font-mono); }
     geo: ["var(--accent)", "var(--accent)"]                // L, S, H, h: the geometry values, green like θ
   };
   const f1 = (n) => n.toFixed(1);
-  const line = (x1, y1, x2, y2, attrs) => `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" ${attrs}/>`;
+  const line = (x1, y1, x2, y2, attrs) => {
+    if (OBS) OBS.segs.push([x1, y1, x2, y2]);                     // every drawn line is an obstacle for labels
+    return `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" ${attrs}/>`;
+  };
+  // Approximate box of a text label: chars × 0.6 em wide, 1.1 em tall
+  const textBox = (cx, cy, str, size, anchor) => {
+    const w = String(str).length * 0.6 * size, x0 = anchor === "end" ? cx - w : anchor === "start" ? cx : cx - w / 2;
+    return [x0, cy - 0.55 * size, w, 1.1 * size];
+  };
   const text = (x, y, s, attrs) => `<text x="${f1(x)}" y="${f1(y)}" ${attrs}>${s}</text>`;
   const unit = (x, y) => { const n = Math.hypot(x, y) || 1; return [x / n, y / n]; };
 
@@ -781,27 +790,126 @@ svg text { font-family: var(--font-mono); }
     let s = line(x, y1, x, y2, st) + line(x - tk, y1, x + tk, y1, st) + line(x - tk, y2, x + tk, y2, st);
     const ym = (y1 + y2) / 2, attrs = `class="d-label" font-size="${f1(13 * u)}" fill="${col[1]}" dominant-baseline="central"`;
     s += side === "left" ? text(x - 9 * u, ym, label, attrs + ` text-anchor="end"`) : text(x + 9 * u, ym, label, attrs);
+    if (OBS) OBS.boxes.push(side === "left" ? textBox(x - 9 * u, ym, label, 13 * u, "end") : textBox(x + 9 * u, ym, label, 13 * u, "start"));
     return s;
   }
   function hDim(u, y, x1, x2, col, label, lx) {
     const st = `stroke="${col[0]}" stroke-width="${f1(2 * u)}"`, tk = 6 * u;
     const s = line(x1, y, x2, y, st) + line(x1, y - tk, x1, y + tk, st) + line(x2, y - tk, x2, y + tk, st);
+    if (OBS) OBS.boxes.push(textBox(lx, y + 20 * u, label, 13 * u, "middle"));
     return s + text(lx, y + 20 * u, label, `class="d-label" font-size="${f1(13 * u)}" fill="${col[1]}" text-anchor="middle" dominant-baseline="central"`);
   }
 
-  // Places vertex labels one by one; a label that would overlap one already placed
-  // is pushed further along its outward direction. Thin boards crowd the corners.
-  function placeLabels(u, specs) {
+  // ---------- Label placement with leader lines ----------
+  // While drawing, every line, dimension label and filled shape is recorded as an obstacle.
+  // Each vertex label first tries its natural spot beside its point; if that is taken, it
+  // moves out on widening rings around the point to the first clear spot and is joined to
+  // the point by a thin leader line. Thin boards crowd their corners, which is when this kicks in.
+  let OBS = null;
+  const boxHit = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3];
+  function segsCross(ax, ay, bx, by, cx, cy, dx, dy) {
+    const d = (bx - ax) * (dy - cy) - (by - ay) * (dx - cx);
+    if (d === 0) return false;
+    const t = ((cx - ax) * (dy - cy) - (cy - ay) * (dx - cx)) / d;
+    const v = ((cx - ax) * (by - ay) - (cy - ay) * (bx - ax)) / d;
+    return t >= 0 && t <= 1 && v >= 0 && v <= 1;
+  }
+  function segHitsBox([x1, y1, x2, y2], [bx, by, bw, bh]) {
+    const inside = (x, y) => x >= bx && x <= bx + bw && y >= by && y <= by + bh;
+    if (inside(x1, y1) || inside(x2, y2)) return true;
+    return [[bx, by, bx + bw, by], [bx + bw, by, bx + bw, by + bh], [bx, by + bh, bx + bw, by + bh], [bx, by, bx, by + bh]]
+      .some((e) => segsCross(x1, y1, x2, y2, ...e));
+  }
+  function inPoly(x, y, P) {
+    let inside = false;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+      if ((P[i][1] > y) !== (P[j][1] > y) && x < ((P[j][0] - P[i][0]) * (y - P[i][1])) / (P[j][1] - P[i][1]) + P[i][0]) inside = !inside;
+    }
+    return inside;
+  }
+  // Where a line from P toward the box centre first touches the box
+  function boxEntry(P, b) {
+    const c = [b[0] + b[2] / 2, b[1] + b[3] / 2], vx = c[0] - P[0], vy = c[1] - P[1];
+    let t0 = 0;
+    for (const [p, q] of [[-vx, P[0] - b[0]], [vx, b[0] + b[2] - P[0]], [-vy, P[1] - b[1]], [vy, b[1] + b[3] - P[1]]]) {
+      if (p < 0) t0 = Math.max(t0, q / p);
+    }
+    return [P[0] + vx * t0, P[1] + vy * t0];
+  }
+
+  // Labels go in three groups:
+  //   wall:  points on the right wall (C′, B, G) stack in order in a column just right of it
+  //   floor: points on the floor (A′, A, E, F) line up in one row just under it
+  //   free:  the rest (D, C, H) try their natural spot, then rings around the point
+  // A label that had to move away from its point gets a thin leader line back to it.
+  function placeLabels(u, groups, W, H) {
     const placed = [];
     let out = "";
-    specs.forEach(({ x, y, dx, dy, ch }) => {
-      // Labels are about 8.4 units wide per character; keep a clear gap so neighbours don't read as one name
-      let px = x, py = y;
-      const w = ch.length * 8.4 * u;
-      const hits = () => placed.some((p) => Math.abs(p[0] - px) < (p[2] + w) / 2 + 5 * u && Math.abs(p[1] - py) < 16 * u);
-      for (let i = 0; i < 14 && hits(); i++) { px += dx * 3 * u; py += dy * 3 * u; }
-      placed.push([px, py, w]);
-      out += text(px, py, ch, `class="v-label" font-size="${f1(14 * u)}" text-anchor="middle" dominant-baseline="central"`);
+    const labelAttrs = `class="v-label" font-size="${f1(14 * u)}" text-anchor="middle" dominant-baseline="central"`;
+    const leaderAttrs = `class="leader" stroke-width="${f1(0.9 * u)}"`;
+    const widthOf = (ch) => ch.length * 8.4 * u;
+    const boxAt = (cx, cy, w) => [cx - w / 2 - 2 * u, cy - 8.5 * u, w + 4 * u, 17 * u];
+
+    // Wall column: natural height first, then pushed down just enough to clear the one above.
+    // If that would run into the floor row, the stack is built upward from there instead.
+    const { colX, wall } = groups.wall, { rowY } = groups.floor;
+    const col = wall.slice().sort((p1, p2) => p1.p[1] - p2.p[1]);
+    let prev = -Infinity;
+    col.forEach((it) => { it.y = Math.max(it.p[1], prev + 17 * u); prev = it.y; });
+    const floorTop = rowY - 17 * u;
+    if (col.length && col[col.length - 1].y > floorTop) {
+      let next = Infinity;
+      for (let i = col.length - 1; i >= 0; i--) { col[i].y = Math.min(col[i].p[1], floorTop, next - 17 * u); next = col[i].y; }
+    }
+    col.forEach((it) => {
+      const w = widthOf(it.ch), y = it.y;
+      const b = boxAt(colX, y, w);
+      placed.push(b);
+      if (Math.abs(y - it.p[1]) > 4 * u) out += line(it.p[0] + 3 * u, it.p[1], b[0] + u, y, leaderAttrs);
+      out += text(colX, y, it.ch, labelAttrs);
+    });
+
+    // Floor row: natural position first, then pushed right just enough to clear the one before
+    const { floor } = groups.floor;
+    let prevR = -Infinity;
+    floor.slice().sort((p1, p2) => p1.x0 - p2.x0).forEach((it) => {
+      const w = widthOf(it.ch), x = Math.max(it.x0, prevR + w / 2 + 6 * u);
+      prevR = x + w / 2;
+      const b = boxAt(x, rowY, w);
+      placed.push(b);
+      if (Math.abs(x - it.x0) > 4 * u) out += line(it.p[0], it.p[1] + 3 * u, x, b[1] + u, leaderAttrs);
+      out += text(x, rowY, it.ch, labelAttrs);
+    });
+
+    // Free labels
+    groups.free.forEach(({ x, y, dx, dy, ch, p }) => {
+      const w = widthOf(ch);
+      const free = (b) => b[0] >= 2 * u && b[1] >= 2 * u && b[0] + b[2] <= W - 2 * u && b[1] + b[3] <= H - 2 * u &&
+        !placed.some((q) => boxHit(q, b)) && !OBS.boxes.some((q) => boxHit(q, b)) &&
+        !OBS.segs.some((sg) => segHitsBox(sg, b)) &&
+        !OBS.polys.some((P) => [[b[0], b[1]], [b[0] + b[2], b[1]], [b[0], b[1] + b[3]], [b[0] + b[2], b[1] + b[3]],
+          [b[0] + b[2] / 2, b[1] + b[3] / 2]].some(([px, py]) => inPoly(px, py, P)));
+      for (let i = 0; i <= 2; i++) {                    // the natural spot, nudged at most twice
+        const cx = x + dx * 3 * u * i, cy = y + dy * 3 * u * i, b = boxAt(cx, cy, w);
+        if (free(b)) { placed.push(b); out += text(cx, cy, ch, labelAttrs); return; }
+      }
+      const base = Math.atan2(dy, dx);                  // rings around the point, nearest first
+      for (const r of [26, 34, 44, 56, 70, 86, 104]) {
+        for (const da of [0, 25, -25, 50, -50, 75, -75, 105, -105, 140, -140, 180]) {
+          const a = base + da * DEG, cx = p[0] + Math.cos(a) * r * u, cy = p[1] + Math.sin(a) * r * u, b = boxAt(cx, cy, w);
+          if (!free(b)) continue;
+          const end = boxEntry(p, b), len = Math.hypot(end[0] - p[0], end[1] - p[1]);
+          const lead = [p[0] + (end[0] - p[0]) * (4 * u / len), p[1] + (end[1] - p[1]) * (4 * u / len), end[0], end[1]];
+          if (placed.some((q) => segHitsBox(lead, q)) || OBS.boxes.some((q) => segHitsBox(lead, q))) continue;
+          placed.push(b);
+          out += line(...lead, leaderAttrs) + text(cx, cy, ch, labelAttrs);
+          return;
+        }
+      }
+      let cx = x, cy = y;                               // nowhere clear: push outward as before
+      for (let i = 0; i < 14 && placed.some((q) => boxHit(q, boxAt(cx, cy, w))); i++) { cx += dx * 3 * u; cy += dy * 3 * u; }
+      placed.push(boxAt(cx, cy, w));
+      out += text(cx, cy, ch, labelAttrs);
     });
     return out;
   }
@@ -830,6 +938,7 @@ svg text { font-family: var(--font-mono); }
     const support = Number.isFinite(g.FH);            // FH is only set when 0 < t < AF
     const Gx = X(g.S - g.t), Hy = Y(g.FH);
 
+    OBS = { segs: [], boxes: [], polys: [[A, B, C, D]] };
     let s = "";
     const guide = `class="guide" stroke-width="${f1(u)}" opacity=".7"`;
     s += line(E[0], 24 * u, E[0], oy + 14 * u, guide) + line(F[0], 24 * u, F[0], oy + 14 * u, guide) + line(E[0], oy, F[0], oy, guide);
@@ -843,6 +952,7 @@ svg text { font-family: var(--font-mono); }
     if (support) {
       const solidH = Math.max(0, (oy - Hy) * 0.6), sw = `stroke="var(--support-line)" stroke-width="${f1(u)}"`;
       s += `<rect x="${f1(Gx)}" y="${f1(Hy)}" width="${f1(F[0] - Gx)}" height="${f1(solidH)}" fill="var(--support-fill)"/>`;
+      OBS.polys.push([[Gx, Hy], [F[0], Hy], [F[0], Hy + solidH], [Gx, Hy + solidH]]);
       s += `<path d="M${f1(Gx)} ${f1(Hy + solidH)} V${f1(Hy)} H${f1(F[0])}" fill="none" ${sw}/>`;
       s += line(Gx, Hy + solidH, Gx, oy - 4 * u, `${sw} stroke-dasharray="${f1(4 * u)} ${f1(4 * u)}"`);
       const zs = Math.min(sq, 0.45 * (F[0] - Gx), 0.45 * solidH);     // G and H; F is marked with the walls
@@ -871,8 +981,10 @@ svg text { font-family: var(--font-mono); }
     if (rNeed <= Math.min(rMax, 120 * u)) {
       const rl = Math.min(Math.max(50 * u, rNeed), rMax);
       s += text(A[0] + rl * Math.cos(half), oy - rl * Math.sin(half), "θ", thAttrs);
+      OBS.boxes.push(textBox(A[0] + rl * Math.cos(half), oy - rl * Math.sin(half), "θ", 13 * u, "middle"));
     } else if (room > ra + 30 * u) {
       s += text(A[0] + ra + 14 * u, oy + 13 * u, "θ", thAttrs);     // very flat board: under the floor line
+      OBS.boxes.push(textBox(A[0] + ra + 14 * u, oy + 13 * u, "θ", 13 * u, "middle"));
     }
 
     // Dimensions
@@ -893,6 +1005,7 @@ svg text { font-family: var(--font-mono); }
     const ext = `class="guide" stroke-width="${f1(0.8 * u)}" opacity=".7"`;
     s += line(C[0], C[1] - 24 * u, C[0], ccY - 2 * u, ext);
     s += line(C[0], ccY, F[0], ccY, stc) + line(C[0], ccY - tkc, C[0], ccY + tkc, stc) + line(F[0], ccY - tkc, F[0], ccY + tkc, stc);
+    OBS.boxes.push(textBox((C[0] + F[0]) / 2, ccY - 12 * u, "CC′", 13 * u, "middle"));
     s += text((C[0] + F[0]) / 2, ccY - 12 * u, "CC′", `class="d-label" font-size="${f1(13 * u)}" fill="${COL.ae[1]}" text-anchor="middle" dominant-baseline="central"`);
 
     // L runs parallel to the board, outside its top edge DC
@@ -901,7 +1014,9 @@ svg text { font-family: var(--font-mono); }
     const D2 = at(D, off), C2 = at(C, off), sti = `stroke="var(--accent)" stroke-width="${f1(2 * u)}"`;
     s += line(...at(D, 4 * u), ...at(D, off + 4 * u), ext) + line(...at(C, 4 * u), ...at(C, off + 4 * u), ext);
     s += line(...D2, ...C2, sti) + line(...at(D, off - tkc), ...at(D, off + tkc), sti) + line(...at(C, off - tkc), ...at(C, off + tkc), sti);
-    const Lm = at([(D[0] + C[0]) / 2, (D[1] + C[1]) / 2], off + 12 * u), Lang = (Math.atan2(C[1] - D[1], C[0] - D[0]) / DEG).toFixed(2);
+    const Lm = at([(D[0] + C[0]) / 2, (D[1] + C[1]) / 2], off + 12 * u);
+    OBS.boxes.push([Lm[0] - 7 * u, Lm[1] - 7 * u, 14 * u, 14 * u]);
+    const Lang = (Math.atan2(C[1] - D[1], C[0] - D[0]) / DEG).toFixed(2);
     s += `<text x="${f1(Lm[0])}" y="${f1(Lm[1])}" transform="rotate(${Lang} ${f1(Lm[0])} ${f1(Lm[1])})" class="d-label" font-size="${f1(13 * u)}" fill="var(--accent)" text-anchor="middle" dominant-baseline="central">L</text>`;
 
     // Scale bar, bottom right: a round length (1, 2 or 5 × 10ⁿ) about 100 units of drawing long
@@ -911,6 +1026,7 @@ svg text { font-family: var(--font-mono); }
     const sbAttrs = `stroke="var(--ink)" stroke-width="${f1(1.5 * u)}"`;
     s += line(sbL, sbY, sbR, sbY, sbAttrs) + line(sbL, sbY - tk, sbL, sbY, sbAttrs) + line(sbR, sbY - tk, sbR, sbY, sbAttrs);
     s += line((sbL + sbR) / 2, sbY - tk * 0.6, (sbL + sbR) / 2, sbY, `stroke="var(--ink)" stroke-width="${f1(u)}"`);
+    OBS.boxes.push(textBox((sbL + sbR) / 2, sbY - 13 * u, String(Number(nice.toPrecision(6))), 12 * u, "middle"));
     s += text((sbL + sbR) / 2, sbY - 13 * u, String(Number(nice.toPrecision(6))), `fill="var(--ink)" font-size="${f1(12 * u)}" text-anchor="middle" dominant-baseline="central"`);
 
     // Points
@@ -918,24 +1034,18 @@ svg text { font-family: var(--font-mono); }
     pts.forEach((p) => { s += `<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="${f1(3 * u)}" fill="var(--ink)"/>`; });
 
     // Vertex labels sit on each corner's outward bisector (screen y points down)
-    const out = (ux, uy, d, p) => ({ x: p[0] + ux * d * u, y: p[1] + uy * d * u, dx: ux, dy: uy });
+    const out = (ux, uy, d, p) => ({ x: p[0] + ux * d * u, y: p[1] + uy * d * u, dx: ux, dy: uy, p });
     const dirC = unit(cs - sn, -(sn + cs)), dirD = unit(-(cs + sn), -(cs - sn));
     const dirG = unit(Math.cos(225 * DEG + half), -Math.sin(225 * DEG + half));
-    const specs = [
-      { ...out(0, 1, 18, A), ch: "A" },
-      { ...out(-0.7, 0.7, 20, E), ch: "A′" },
-      { ...out(0.7, 0.7, 20, F), ch: "F" },
-      { ...out(dirD[0], dirD[1], 15, D), ch: "D" },
-      { x: B[0] + 14 * u, y: B[1] - 8 * u, dx: 0.6, dy: -0.8, ch: "B" },
-      { ...out(dirC[0], dirC[1], 15, C), ch: "C" },
-      { x: Cp[0] + 14 * u, y: Cp[1], dx: 0.6, dy: -0.8, ch: "C′" }
-    ];
-    if (support) {
-      specs.push({ x: F[0] + 14 * u, y: Hy + 2 * u, dx: 0.3, dy: 0.95, ch: "G" });
-      specs.push({ ...out(dirG[0], dirG[1], 20, [Gx, Hy]), ch: "H" });
-      specs.push({ ...out(0, 1, 18, [Gx, oy]), ch: "E" });
-    }
-    s += placeLabels(u, specs);
+    const groups = {
+      wall: { colX: F[0] + 14 * u, wall: [{ ch: "C′", p: Cp }, { ch: "B", p: B }].concat(support ? [{ ch: "G", p: [F[0], Hy] }] : []) },
+      floor: { rowY: oy + 17 * u, floor: [{ ch: "A′", p: E, x0: E[0] - 12 * u }, { ch: "A", p: A, x0: A[0] }, { ch: "F", p: F, x0: F[0] + 12 * u }]
+        .concat(support ? [{ ch: "E", p: [Gx, oy], x0: Gx }] : []) },
+      free: [{ ...out(dirD[0], dirD[1], 15, D), ch: "D" }, { ...out(dirC[0], dirC[1], 15, C), ch: "C" }]
+        .concat(support ? [{ ...out(dirG[0], dirG[1], 20, [Gx, Hy]), ch: "H" }] : [])
+    };
+    s += placeLabels(u, groups, W, H);
+    OBS = null;
     if (support && F[0] - Gx >= 14 * u) {
       s += text((Gx + F[0]) / 2, Hy + 16 * u, "t", `fill="var(--muted)" font-size="${f1(12 * u)}" text-anchor="middle" dominant-baseline="central"`);
     }
