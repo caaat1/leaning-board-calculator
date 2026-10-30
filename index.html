@@ -481,6 +481,7 @@ svg text { font-family: var(--font-mono); }
   const STEPS = { "0.001": [0.001, 3], "0.01": [0.01, 2], "0.1": [0.1, 1], "0.5": [0.5, 1], "1": [1, 0] };
   const ROUND_DEFAULT = "0.5";
   let roundTo = ROUND_DEFAULT;
+  let roundPrev = null;                                  // the last non-default step, so the button can toggle back
   function fmtLen(v) {
     if (!Number.isFinite(v)) return "—";
     const [step, d] = STEPS[roundTo];
@@ -707,7 +708,10 @@ svg text { font-family: var(--font-mono); }
     c.classList.toggle("bad", !g.ok);
     $("check-msg").textContent = warn ? g.warn : g.msg;
     renderPicker(g);
-    $("round-reset").disabled = roundTo === ROUND_DEFAULT;
+    if (roundTo !== ROUND_DEFAULT) roundPrev = roundTo;
+    const rr = $("round-reset");
+    rr.disabled = roundTo === ROUND_DEFAULT && !roundPrev;
+    rr.title = roundTo !== ROUND_DEFAULT ? "Back to the default, " + ROUND_DEFAULT : roundPrev ? "Back to " + roundPrev : "";
 
     draw(g);
     save();
@@ -1231,7 +1235,7 @@ svg text { font-family: var(--font-mono); }
     });
   });
   $("round-reset").addEventListener("click", () => {
-    roundTo = ROUND_DEFAULT;
+    roundTo = roundTo !== ROUND_DEFAULT ? ROUND_DEFAULT : (roundPrev || ROUND_DEFAULT);
     document.querySelectorAll('input[name="round"]').forEach((el) => { el.checked = el.value === roundTo; });
     render();
   });
