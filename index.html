@@ -226,7 +226,9 @@ summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .inter { display: grid; gap: 4px; margin-top: 8px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
 .inter div { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
 
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.act-note { font-size: 12.5px; color: var(--muted); }
+.link-box { width: 100%; font: 12px var(--font-mono); padding: 6px 8px; color: var(--ink); background: var(--input-bg); border: 1px solid var(--input-rule); border-radius: 4px; }
 button {
   font: 500 13px var(--font-body); color: var(--accent); background: transparent;
   border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer;
@@ -369,7 +371,12 @@ svg text { font-family: var(--font-mono); }
         </div>
       </details>
 
-      <div class="actions"><button type="button" id="reset">Reset to example</button></div>
+      <div class="actions">
+        <button type="button" id="reset">Reset to example</button>
+        <button type="button" id="share">Copy link</button>
+        <span class="act-note" id="share-note" aria-live="polite"></span>
+        <input class="link-box" id="link-box" type="text" readonly hidden aria-label="Link to this layout">
+      </div>
     </section>
 
     <section class="panel drawing" aria-labelledby="h-drawing">
@@ -606,6 +613,7 @@ svg text { font-family: var(--font-mono); }
 
     draw(g);
     save();
+    if (!framed) history.replaceState(null, "", "#" + linkCode());   // the address always holds the layout
   }
 
   // ---------- Drawing ----------
@@ -845,7 +853,71 @@ svg text { font-family: var(--font-mono); }
     edited(el.dataset.key);
   }
 
+  // ---------- Share links ----------
+  // The state travels in the link as letters, digits and hyphens, for example
+  // #v1-LS-L440-S421-T80-t120-q0p5 (entered pair, values with p for the decimal point, rounding).
+  const framed = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  function enc(n) {
+    let s = String(Number(n.toPrecision(12)));
+    if (/e/i.test(s)) s = n.toFixed(6);
+    return s.replace(".", "p");
+  }
+  function linkCode() {
+    const parts = ["v1", entered.join("")];
+    entered.forEach((k) => { const v = read(k); if (Number.isFinite(v)) parts.push(k + enc(v)); });
+    const T = read("T"), t = read("t");
+    if (Number.isFinite(T)) parts.push("T" + enc(T));
+    if (inSame.checked) parts.push("same");
+    else if (Number.isFinite(t)) parts.push("t" + enc(t));
+    parts.push("q" + roundTo.replace(".", "p"));
+    return parts.join("-");
+  }
+  function applyCode(code) {
+    const parts = code.split("-");
+    const pair = (parts[1] || "").split("");
+    if (parts[0] !== "v1" || !validPair(pair)) return false;
+    entered = pair;
+    inSame.checked = parts.includes("same");
+    GEO.forEach((k) => { shown[k] = exact[k] = null; });
+    parts.slice(2).forEach((tok) => {
+      const m = /^([LSHATtq])(\d+(?:p\d+)?)$/.exec(tok);
+      if (!m) return;
+      const text = m[2].replace("p", ".");
+      if (m[1] === "q") { if (STEPS[text]) roundTo = text; return; }
+      const v = Number(text);
+      // A long exact value is shown rounded but kept exact, so the shared layout matches to the digit
+      if (GEO.includes(m[1]) && Number(fmtGeo(m[1], v)) !== v) {
+        shown[m[1]] = field[m[1]].value = fmtGeo(m[1], v);
+        exact[m[1]] = v;
+      } else field[m[1]].value = text;
+    });
+    document.querySelectorAll('input[name="round"]').forEach((el) => { el.checked = el.value === roundTo; });
+    return true;
+  }
+  let noteTimer = 0;
+  function note(text) {
+    $("share-note").textContent = text;
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => { $("share-note").textContent = ""; }, 5000);
+  }
+  $("share").addEventListener("click", () => {
+    const code = linkCode();
+    if (framed) {
+      // Inside a hosting page the address belongs to the host; put the state in its link instead
+      location.hash = code;
+      note("Link updated. Use Share → Copy link to send it.");
+      return;
+    }
+    history.replaceState(null, "", "#" + code);
+    const url = location.href, box = $("link-box");
+    const fallback = () => { box.hidden = false; box.value = url; box.focus(); box.select(); note("Copy the link below"); };
+    try { navigator.clipboard.writeText(url).then(() => { box.hidden = true; note("Link copied"); }, fallback); }
+    catch (e) { fallback(); }
+  });
+  window.addEventListener("hashchange", () => { if (applyCode(location.hash.slice(1))) render(); });
+
   load();
+  if (/^#v1-/.test(location.hash)) applyCode(location.hash.slice(1));   // a shared link wins over saved state
   document.querySelectorAll('input[name="round"]').forEach((el) => {
     el.checked = el.value === roundTo;
     el.addEventListener("change", () => { roundTo = el.value; render(); });
