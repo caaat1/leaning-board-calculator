@@ -123,6 +123,12 @@ h1 {
   line-height: 1.05; margin: 0; letter-spacing: -.01em; text-wrap: balance;
 }
 .lede { margin: 0; color: var(--muted); font-size: 13.5px; }
+/* On a big screen the header stays on top while the page scrolls under it */
+@media (min-width: 1100px) and (min-height: 760px) {
+  html { scroll-padding-top: 200px; }
+  body { padding-top: 0; }
+  header { position: sticky; top: 0; z-index: 20; background: var(--paper); padding-block: 22px 12px; border-bottom: 1px solid var(--rule); }
+}
 
 /* Inputs and Check on the left; the drawing with the results under it on the right.
    The second row is flexible so a tall left column never opens a gap under the drawing. */
