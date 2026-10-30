@@ -125,6 +125,8 @@ h1 {
   padding: 16px 18px; min-width: 0;
 }
 .calc { display: grid; gap: 14px; }
+/* Left column: the inputs panel and the results panel, stacked */
+.side { display: grid; gap: 18px; min-width: 0; align-content: start; }
 h2 {
   font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--muted); margin: 0 0 8px;
@@ -296,6 +298,7 @@ svg text { font-family: var(--font-mono); }
   </header>
 
   <div class="layout">
+    <div class="side">
     <section class="panel calc" aria-labelledby="h-inputs">
       <div>
         <h2 id="h-inputs">Inputs</h2>
@@ -368,6 +371,15 @@ svg text { font-family: var(--font-mono); }
         </form>
       </div>
 
+      <div class="actions">
+        <button type="button" id="reset">Reset to example</button>
+        <button type="button" id="share">Copy link</button>
+        <span class="act-note" id="share-note" aria-live="polite"></span>
+        <input class="link-box" id="link-box" type="text" readonly hidden aria-label="Link to this layout">
+      </div>
+    </section>
+
+    <section class="panel calc results-panel" aria-labelledby="h-results">
       <div>
         <div class="res-head">
           <h2 id="h-results">Results</h2>
@@ -400,14 +412,8 @@ svg text { font-family: var(--font-mono); }
           <div><span>t used</span><span id="o-tu">—</span></div>
         </div>
       </details>
-
-      <div class="actions">
-        <button type="button" id="reset">Reset to example</button>
-        <button type="button" id="share">Copy link</button>
-        <span class="act-note" id="share-note" aria-live="polite"></span>
-        <input class="link-box" id="link-box" type="text" readonly hidden aria-label="Link to this layout">
-      </div>
     </section>
+    </div>
 
     <section class="panel drawing" aria-labelledby="h-drawing">
       <h2 id="h-drawing">Layout, to scale</h2>
