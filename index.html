@@ -1216,6 +1216,28 @@ svg text { font-family: var(--font-mono); }
   const fp = $("formulas");
   try { fp.open = localStorage.getItem("leaning-board-formulas") === "open"; } catch (e) {}
   fp.addEventListener("toggle", () => { try { localStorage.setItem("leaning-board-formulas", fp.open ? "open" : "closed"); } catch (e) {} });
+  // Fold and unfold smoothly: animate the height of the body, then flip the native open state
+  const fpBody = fp.querySelector(".formulas");
+  let fpAnim = null;
+  fp.querySelector("summary").addEventListener("click", (e) => {
+    if (!fpBody.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;   // plain toggle
+    e.preventDefault();
+    const opening = !fp.open || (fpAnim && fpAnim.closing);
+    if (fpAnim) { fpAnim.cancel(); fpAnim = null; }
+    fpBody.style.overflow = "hidden"; fpBody.style.boxSizing = "border-box";
+    if (!fp.open) fp.open = true;
+    const full = fpBody.offsetHeight;
+    const frames = opening ? [{ height: "0px", opacity: 0 }, { height: full + "px", opacity: 1 }]
+                           : [{ height: full + "px", opacity: 1 }, { height: "0px", opacity: 0 }];
+    const a = fpBody.animate(frames, { duration: 240, easing: "ease" });
+    a.closing = !opening; fpAnim = a;
+    const done = () => {
+      if (fpAnim !== a) return;
+      fpAnim = null; fpBody.style.overflow = ""; fpBody.style.boxSizing = "";
+      if (!opening) fp.open = false;
+    };
+    a.onfinish = done;
+  });
   if (/^#v1-/.test(location.hash)) applyCode(location.hash.slice(1));   // a shared link wins over saved state
   document.querySelectorAll('input[name="round"]').forEach((el) => {
     el.checked = el.value === roundTo;
