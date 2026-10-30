@@ -36,9 +36,8 @@
   /* Segment colors: line = dimension strokes, text = labels (darker for contrast), bg/fg = result rows */
   --af-line: #D85A30; --af-text: #993C1D; --af-bg: #F5C4B3; --af-fg: #4A1B0C;
   --bf-line: #7F77DD; --bf-text: #534AB7; --bf-bg: #CECBF6; --bf-fg: #26215C;
-  --ae-line: #1D9E75; --ae-text: #0F6E56; --ae-bg: #9FE1CB; --ae-fg: #04342C;
+  --ae-line: #BA7517; --ae-text: #854F0B; --ae-bg: #FAC775; --ae-fg: #412402;
   --de-line: #D4537E; --de-text: #993556; --de-bg: #F4C0D1; --de-fg: #4B1528;
-  --fh-line: #BA7517; --fh-text: #854F0B; --fh-bg: #FAC775; --fh-fg: #412402;
   --bh-line: #378ADD; --bh-text: #185FA5; --bh-bg: #B5D4F4; --bh-fg: #042C53;
 
   --ok-bg: #e4f0d6; --ok-fg: #3B6D11;
@@ -58,9 +57,8 @@
     --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
     --af-text: #F0997B; --af-bg: #712B13; --af-fg: #F5C4B3;
     --bf-text: #AFA9EC; --bf-bg: #3C3489; --bf-fg: #CECBF6;
-    --ae-text: #5DCAA5; --ae-bg: #085041; --ae-fg: #9FE1CB;
+    --ae-text: #EF9F27; --ae-bg: #633806; --ae-fg: #FAC775;
     --de-text: #ED93B1; --de-bg: #72243E; --de-fg: #F4C0D1;
-    --fh-text: #EF9F27; --fh-bg: #633806; --fh-fg: #FAC775;
     --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
     --ok-bg: #27500A; --ok-fg: #C0DD97;
     --warn-bg: #633806; --warn-fg: #FAC775;
@@ -76,9 +74,8 @@
   --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
   --af-text: #F0997B; --af-bg: #712B13; --af-fg: #F5C4B3;
   --bf-text: #AFA9EC; --bf-bg: #3C3489; --bf-fg: #CECBF6;
-  --ae-text: #5DCAA5; --ae-bg: #085041; --ae-fg: #9FE1CB;
+  --ae-text: #EF9F27; --ae-bg: #633806; --ae-fg: #FAC775;
   --de-text: #ED93B1; --de-bg: #72243E; --de-fg: #F4C0D1;
-  --fh-text: #EF9F27; --fh-bg: #633806; --fh-fg: #FAC775;
   --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
   --ok-bg: #27500A; --ok-fg: #C0DD97;
   --warn-bg: #633806; --warn-fg: #FAC775;
@@ -174,7 +171,6 @@ legend { padding: 0; margin-bottom: 4px; }
 }
 .in-row.is-calc .tag { display: inline-block; }
 .in-row.is-calc .sym { color: var(--calc-fg); }
-.in-row .sym.sym-fg { color: var(--fh-text); }   /* h is FG: same amber as its dimension */
 .in-row.is-calc input.num {
   background: var(--calc-bg); color: var(--calc-fg); border: 1px dashed var(--calc-rule); cursor: default;
 }
@@ -214,7 +210,6 @@ legend { padding: 0; margin-bottom: 4px; }
 .r-bf { --row-bg: var(--bf-bg); --row-fg: var(--bf-fg); }
 .r-ae { --row-bg: var(--ae-bg); --row-fg: var(--ae-fg); }
 .r-de { --row-bg: var(--de-bg); --row-fg: var(--de-fg); }
-.r-fh { --row-bg: var(--fh-bg); --row-fg: var(--fh-fg); }
 .r-bh { --row-bg: var(--bh-bg); --row-fg: var(--bh-fg); }
 
 .check {
@@ -277,7 +272,7 @@ svg text { font-family: var(--font-mono); }
 .f-grid .k { font-weight: 500; }
 .formulas .f-note { font-family: var(--font-mono); font-size: 12.5px; padding-left: 6px; max-width: none; }
 .k-af { color: var(--af-text); } .k-bf { color: var(--bf-text); } .k-ae { color: var(--ae-text); }
-.k-de { color: var(--de-text); } .k-fh { color: var(--fh-text); } .k-bh { color: var(--bh-text); }
+.k-de { color: var(--de-text); } .k-bh { color: var(--bh-text); }
 
 @media (max-width: 420px) {
   .in-row { grid-template-columns: 22px 28px minmax(0, 1fr) 100px; }
@@ -341,7 +336,7 @@ svg text { font-family: var(--font-mono); }
             </div>
             <div class="in-row">
               <label class="pick" title="Enter h"><input type="checkbox" id="pick-h" aria-label="Enter h"></label>
-              <span class="sym sym-fg">h</span>
+              <span class="sym">h</span>
               <label class="lbl" for="in-h">Support height, FG <span class="tag">calculated</span></label>
               <input class="num" id="in-h" data-key="h" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="150.793">
               <div class="slide">
@@ -419,7 +414,7 @@ svg text { font-family: var(--font-mono); }
     <section class="panel drawing" aria-labelledby="h-drawing">
       <h2 id="h-drawing">Layout, to scale</h2>
       <div class="sheet"><svg id="svg" viewBox="0 0 680 480" role="img" aria-label="Scaled drawing of the board, support and color-coded segments"></svg></div>
-      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows; the input values L, S and H are dimensioned in black. The support's height doesn't matter, only its thickness t = GH.</p>
+      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows; the geometry values L, S, H, h and θ are in green. The support's height doesn't matter, only its thickness t = GH.</p>
     </section>
   </div>
 
@@ -450,7 +445,7 @@ svg text { font-family: var(--font-mono); }
         <code><span class="k k-bf">BF</span> = L sin θ = H − <span class="k k-de">BC′</span></code>
         <code><span class="k k-ae">AA′</span> = <span class="k k-ae">CC′</span> = T sin θ</code>
         <code><span class="k k-de">DA′</span> = <span class="k k-de">BC′</span> = T cos θ</code>
-        <code><span class="k k-bh">BG</span> = BF − <span class="k k-fh">h</span> = t tan θ</code>
+        <code><span class="k k-bh">BG</span> = BF − h = t tan θ</code>
       </div>
     </div>
     </div>
@@ -723,8 +718,8 @@ svg text { font-family: var(--font-mono); }
   const COL = {
     af: ["var(--af-line)", "var(--af-text)"], bf: ["var(--bf-line)", "var(--bf-text)"],
     ae: ["var(--ae-line)", "var(--ae-text)"], de: ["var(--de-line)", "var(--de-text)"],
-    fh: ["var(--fh-line)", "var(--fh-text)"], bh: ["var(--bh-line)", "var(--bh-text)"],
-    ink: ["var(--ink)", "var(--ink)"]                      // L, S and H: the input values
+    bh: ["var(--bh-line)", "var(--bh-text)"],
+    geo: ["var(--accent)", "var(--accent)"]                // L, S, H, h: the geometry values, green like θ
   };
   const f1 = (n) => n.toFixed(1);
   const line = (x1, y1, x2, y2, attrs) => `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" ${attrs}/>`;
@@ -835,7 +830,7 @@ svg text { font-family: var(--font-mono); }
 
     // Dimensions
     s += vDim(u, E[0] - 36 * u, D[1], oy, COL.de, "DA′", "left");
-    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.fh, "h", "right") + vDim(u, F[0] + 36 * u, B[1], Hy, COL.bh, "BG", "right");
+    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.geo, "h", "right") + vDim(u, F[0] + 36 * u, B[1], Hy, COL.bh, "BG", "right");
     s += vDim(u, F[0] + 82 * u, B[1], oy, COL.bf, "BF", "right");
     let aeX = (E[0] + A[0]) / 2, afX = (A[0] + F[0]) / 2;
     if (afX - aeX < 24 * u) { const mid = (aeX + afX) / 2; aeX = mid - 12 * u; afX = mid + 12 * u; }
@@ -843,8 +838,8 @@ svg text { font-family: var(--font-mono); }
     s += hDim(u, oy + 40 * u, A[0], F[0], COL.af, "AF", afX);
     // BC′ stacks on BF; H spans the whole wall; S spans the whole floor
     s += vDim(u, F[0] + 82 * u, C[1], B[1], COL.de, "BC′", "right");
-    s += vDim(u, F[0] + 126 * u, C[1], oy, COL.ink, "H", "right");
-    s += hDim(u, oy + 76 * u, E[0], F[0], COL.ink, "S", (E[0] + F[0]) / 2);
+    s += vDim(u, F[0] + 126 * u, C[1], oy, COL.geo, "H", "right");
+    s += hDim(u, oy + 76 * u, E[0], F[0], COL.geo, "S", (E[0] + F[0]) / 2);
 
     // CC′ above the dotted line, with an extension line up from C
     const ccY = C[1] - 30 * u, tkc = 6 * u, stc = `stroke="${COL.ae[0]}" stroke-width="${f1(2 * u)}"`;
@@ -856,11 +851,11 @@ svg text { font-family: var(--font-mono); }
     // L runs parallel to the board, outside its top edge DC
     const nrm = [-sn, -cs], off = 22 * u;
     const at = (P, d) => [P[0] + nrm[0] * d, P[1] + nrm[1] * d];
-    const D2 = at(D, off), C2 = at(C, off), sti = `stroke="var(--ink)" stroke-width="${f1(1.5 * u)}"`;
+    const D2 = at(D, off), C2 = at(C, off), sti = `stroke="var(--accent)" stroke-width="${f1(2 * u)}"`;
     s += line(...at(D, 4 * u), ...at(D, off + 4 * u), ext) + line(...at(C, 4 * u), ...at(C, off + 4 * u), ext);
     s += line(...D2, ...C2, sti) + line(...at(D, off - tkc), ...at(D, off + tkc), sti) + line(...at(C, off - tkc), ...at(C, off + tkc), sti);
     const Lm = at([(D[0] + C[0]) / 2, (D[1] + C[1]) / 2], off + 12 * u), Lang = (Math.atan2(C[1] - D[1], C[0] - D[0]) / DEG).toFixed(2);
-    s += `<text x="${f1(Lm[0])}" y="${f1(Lm[1])}" transform="rotate(${Lang} ${f1(Lm[0])} ${f1(Lm[1])})" class="d-label" font-size="${f1(13 * u)}" fill="var(--ink)" text-anchor="middle" dominant-baseline="central">L</text>`;
+    s += `<text x="${f1(Lm[0])}" y="${f1(Lm[1])}" transform="rotate(${Lang} ${f1(Lm[0])} ${f1(Lm[1])})" class="d-label" font-size="${f1(13 * u)}" fill="var(--accent)" text-anchor="middle" dominant-baseline="central">L</text>`;
 
     // Scale bar, bottom right: a round length (1, 2 or 5 × 10ⁿ) about 100 units of drawing long
     const raw = 100 * u / k, pow = Math.pow(10, Math.floor(Math.log10(raw)));
