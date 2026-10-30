@@ -309,12 +309,20 @@ svg text { font-family: var(--font-mono); }
               <span class="sym">L</span>
               <label class="lbl" for="in-L">Length, AB <span class="tag">calculated</span></label>
               <input class="num" id="in-L" data-key="L" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="440">
+              <div class="slide">
+                <input type="range" id="in-L-range" min="0" max="100" step="0.5" value="0" aria-label="Length AB">
+                <div class="slide-scale" aria-hidden="true"><span id="L-lo"></span><span id="L-mid"></span><span id="L-hi"></span></div>
+              </div>
             </div>
             <div class="in-row">
               <label class="pick" title="Enter S"><input type="checkbox" id="pick-S" aria-label="Enter S" checked></label>
               <span class="sym">S</span>
               <label class="lbl" for="in-S">Span, A′F <span class="tag">calculated</span></label>
               <input class="num" id="in-S" data-key="S" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="421">
+              <div class="slide">
+                <input type="range" id="in-S-range" min="0" max="100" step="0.5" value="0" aria-label="Span A′F">
+                <div class="slide-scale" aria-hidden="true"><span id="S-lo"></span><span id="S-mid"></span><span id="S-hi"></span></div>
+              </div>
             </div>
             <div class="in-row">
               <label class="pick" title="Enter H"><input type="checkbox" id="pick-H" aria-label="Enter H"></label>
@@ -608,7 +616,7 @@ svg text { font-family: var(--font-mono); }
     const slider = $("in-A-range");
     slider.disabled = !entered.includes("A");
     if (Number.isFinite(g.deg) && document.activeElement !== slider) slider.value = String(g.deg);
-    updateHeightSlider(key, g);
+    ["L", "S", "H"].forEach((k) => updateLenSlider(k, key, g));
 
     ["AF", "BF", "AE", "DE", "FH", "BH"].forEach((k) => {
       const el = $("o-" + k);
@@ -635,22 +643,32 @@ svg text { font-family: var(--font-mono); }
     if (!framed) history.replaceState(null, "", "#" + linkCode());   // the address always holds the layout
   }
 
-  // Height slider range: with L entered, T to L (above L two angles fit); with H calculated,
-  // T to the board's diagonal; with H entered alongside S or the angle nothing caps it, so
-  // the range is centred on the current H. The range is left alone while it's being dragged.
-  function updateHeightSlider(key, g) {
-    const hs = $("in-H-range"), isIn = entered.includes("H");
-    hs.disabled = !isIn;
-    hs.step = String(STEPS[roundTo][0]);
-    const H = isIn ? read("H") : g.H, T = read("T");
-    if (document.activeElement === hs) return;
-    const hi = key === "LH" ? read("L") : !isIn ? Math.hypot(g.L, g.T) : 2 * H;
-    if (!(Number.isFinite(T) && Number.isFinite(hi) && hi > T)) return;
-    hs.min = String(T); hs.max = String(hi);
-    if (Number.isFinite(H)) hs.value = String(H);
-    $("H-lo").textContent = fmtLen(T);
-    $("H-mid").textContent = fmtLen((T + hi) / 2);
-    $("H-hi").textContent = fmtLen(hi);
+  // Length sliders (L, S, H). Ranges follow what's known:
+  //   S or H with L entered: T to L (above L two angles fit)
+  //   S or H calculated: T to the board's diagonal √(L² + T²)
+  //   L with S or H entered: that value to twice it (L must be at least S or H)
+  //   L calculated: T to the diagonal of the S × H box
+  //   otherwise nothing caps the value, so the range is centred on it.
+  // A range is left alone while its slider is being dragged.
+  function updateLenSlider(k, key, g) {
+    const el = $("in-" + k + "-range"), isIn = entered.includes(k), T = read("T");
+    el.disabled = !isIn;
+    el.step = String(STEPS[roundTo][0]);
+    if (document.activeElement === el) return;
+    const v = isIn ? read(k) : g[k];
+    let lo = T, hi;
+    if (k === "L") {
+      const other = entered.find((x) => x !== "L");
+      if (isIn && (other === "S" || other === "H")) { lo = read(other); hi = 2 * lo; }
+      else hi = isIn ? 2 * v : Math.hypot(g.S, g.H);
+    } else if (key === "L" + k) hi = read("L");
+    else hi = isIn ? 2 * v : Math.hypot(g.L, g.T);
+    if (!(Number.isFinite(lo) && Number.isFinite(hi) && hi > lo)) return;
+    el.min = String(lo); el.max = String(hi);
+    if (Number.isFinite(v)) el.value = String(v);
+    $(k + "-lo").textContent = fmtLen(lo);
+    $(k + "-mid").textContent = fmtLen((lo + hi) / 2);
+    $(k + "-hi").textContent = fmtLen(hi);
   }
 
   // ---------- Drawing ----------
@@ -964,10 +982,13 @@ svg text { font-family: var(--font-mono); }
     field[k].addEventListener("keydown", step);
   });
   inSame.addEventListener("change", render);
-  $("in-H-range").addEventListener("input", (e) => {
-    const v = Math.max(Number(e.target.min) + STEPS[roundTo][0], Number(e.target.value));   // H must exceed T
-    field.H.value = fmtLen(v);
-    edited("H");
+  ["L", "S", "H"].forEach((k) => {
+    $("in-" + k + "-range").addEventListener("input", (e) => {
+      // Values must exceed T; L may equal S or H
+      const lo = Number(e.target.min), floor = lo === read("T") ? lo + STEPS[roundTo][0] : lo;
+      field[k].value = fmtLen(Math.max(floor, Number(e.target.value)));
+      edited(k);
+    });
   });
   $("in-A-range").addEventListener("input", (e) => {
     field.A.value = Math.min(89.9, Math.max(0.1, Number(e.target.value))).toFixed(1);   // the ends are not valid angles
