@@ -174,6 +174,7 @@ legend { padding: 0; margin-bottom: 4px; }
 }
 .in-row.is-calc .tag { display: inline-block; }
 .in-row.is-calc .sym { color: var(--calc-fg); }
+.in-row .sym.sym-fg { color: var(--fh-text); }   /* h is FG: same amber as its dimension */
 .in-row.is-calc input.num {
   background: var(--calc-bg); color: var(--calc-fg); border: 1px dashed var(--calc-rule); cursor: default;
 }
@@ -340,7 +341,7 @@ svg text { font-family: var(--font-mono); }
             </div>
             <div class="in-row">
               <label class="pick" title="Enter h"><input type="checkbox" id="pick-h" aria-label="Enter h"></label>
-              <span class="sym">h</span>
+              <span class="sym sym-fg">h</span>
               <label class="lbl" for="in-h">Support height, FG <span class="tag">calculated</span></label>
               <input class="num" id="in-h" data-key="h" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="150.793">
               <div class="slide">
@@ -392,7 +393,6 @@ svg text { font-family: var(--font-mono); }
           <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ = H − BC′</span><span class="val" id="o-BF">—</span></div>
           <div class="out-row r-ae"><span class="sym">AA′ = CC′</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
           <div class="out-row r-de"><span class="sym">DA′ = BC′</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
-          <div class="out-row r-fh"><span class="sym">FG</span><span class="formula">BF(AF − t) / AF</span><span class="val" id="o-FH">—</span></div>
           <div class="out-row r-bh"><span class="sym">BG</span><span class="formula">BF − FG</span><span class="val" id="o-BH">—</span></div>
         </div>
       </div>
@@ -666,10 +666,10 @@ svg text { font-family: var(--font-mono); }
     if (Number.isFinite(g.deg) && document.activeElement !== slider) slider.value = String(g.deg);
     ["L", "S", "H", "h"].forEach((k) => updateLenSlider(k, key, g));
 
-    ["AF", "BF", "AE", "DE", "FH", "BH"].forEach((k) => {
+    ["AF", "BF", "AE", "DE", "BH"].forEach((k) => {
       const el = $("o-" + k);
       el.textContent = fmtLen(g[k]);
-      el.closest(".out-row").classList.toggle("bad", k === "FH" || k === "BH" ? !g.ok : !g.geomOk);
+      el.closest(".out-row").classList.toggle("bad", k === "BH" ? !g.ok : !g.geomOk);
     });
 
     $("i-d2").hidden = $("i-r").hidden = !(key === "LS" || key === "LH");
@@ -840,6 +840,15 @@ svg text { font-family: var(--font-mono); }
     if (afX - aeX < 24 * u) { const mid = (aeX + afX) / 2; aeX = mid - 12 * u; afX = mid + 12 * u; }
     s += hDim(u, oy + 40 * u, E[0], A[0], COL.ae, "AA′", aeX);
     s += hDim(u, oy + 40 * u, A[0], F[0], COL.af, "AF", afX);
+
+    // Scale bar, bottom right: a round length (1, 2 or 5 × 10ⁿ) about 100 units of drawing long
+    const raw = 100 * u / k, pow = Math.pow(10, Math.floor(Math.log10(raw)));
+    const nice = [5, 2, 1].map((m) => m * pow).find((n) => n <= raw);
+    const sbLen = nice * k, sbR = W - 16 * u, sbL = sbR - sbLen, sbY = H - 16 * u, tk = 5 * u;
+    const sbAttrs = `stroke="var(--ink)" stroke-width="${f1(1.5 * u)}"`;
+    s += line(sbL, sbY, sbR, sbY, sbAttrs) + line(sbL, sbY - tk, sbL, sbY, sbAttrs) + line(sbR, sbY - tk, sbR, sbY, sbAttrs);
+    s += line((sbL + sbR) / 2, sbY - tk * 0.6, (sbL + sbR) / 2, sbY, `stroke="var(--ink)" stroke-width="${f1(u)}"`);
+    s += text((sbL + sbR) / 2, sbY - 13 * u, String(Number(nice.toPrecision(6))), `fill="var(--ink)" font-size="${f1(12 * u)}" text-anchor="middle" dominant-baseline="central"`);
 
     // Points
     const pts = [A, B, C, D, E, F, Cp].concat(support ? [[Gx, Hy], [F[0], Hy], [Gx, oy]] : []);
