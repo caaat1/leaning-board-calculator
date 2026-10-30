@@ -306,7 +306,7 @@ svg text { font-family: var(--font-mono); }
       </div>
     </div>
     <h1>Leaning Board Calculator</h1>
-    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, H, h and ∠BAF, and the page works out the other two along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
+    <p class="lede">A board of length L and thickness T leans at angle θ across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, H, h and θ, and the page works out the rest along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
   </header>
 
   <div class="layout">
@@ -358,12 +358,12 @@ svg text { font-family: var(--font-mono); }
               </div>
             </div>
             <div class="in-row">
-              <label class="pick" title="Enter ∠BAF"><input type="checkbox" id="pick-A" aria-label="Enter angle BAF"></label>
-              <span class="sym">∠</span>
-              <label class="lbl" for="in-A">Tilt ∠BAF, ° <span class="tag">calculated</span></label>
+              <label class="pick" title="Enter θ"><input type="checkbox" id="pick-A" aria-label="Enter θ"></label>
+              <span class="sym">θ</span>
+              <label class="lbl" for="in-A">Tilt, ∠BAF (°) <span class="tag">calculated</span></label>
               <input class="num" id="in-A" data-key="A" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="30">
               <div class="slide">
-                <input type="range" id="in-A-range" min="0" max="90" step="0.1" value="30" list="angle-ticks" aria-label="Tilt angle BAF, degrees">
+                <input type="range" id="in-A-range" min="0" max="90" step="0.1" value="30" list="angle-ticks" aria-label="Tilt θ, degrees">
                 <datalist id="angle-ticks"><option value="15"></option><option value="30"></option><option value="45"></option><option value="60"></option><option value="75"></option></datalist>
                 <div class="slide-scale" aria-hidden="true"><span>0°</span><span>15°</span><span>30°</span><span>45°</span><span>60°</span><span>75°</span><span>90°</span></div>
               </div>
@@ -452,7 +452,7 @@ svg text { font-family: var(--font-mono); }
         <code id="f-H"><span class="k">H</span> = L sin θ + T cos θ</code>
         <code id="f-h"><span class="k">h</span> = L sin θ − t tan θ</code>
       </div>
-      <p class="f-note">where r = √(L² + T² − S²) with S entered, or √(L² + T² − H²) with H entered. Other pairs without ∠BAF are solved numerically.</p>
+      <p class="f-note">where r = √(L² + T² − S²) with S entered, or √(L² + T² − H²) with H entered. Other pairs without θ are solved numerically.</p>
     </div>
     <div class="f-block">
       <h3>Segments</h3>
@@ -474,7 +474,7 @@ svg text { font-family: var(--font-mono); }
   const KEY = "leaning-board-v2";
   const DEG = Math.PI / 180;
   const GEO = ["L", "S", "A", "H", "h"];             // any two are entered, the rest calculated
-  const NAMES = { L: "L", S: "S", A: "∠BAF", H: "H", h: "h", T: "T", t: "t" };
+  const NAMES = { L: "L", S: "S", A: "θ", H: "H", h: "h", T: "T", t: "t" };
   // Lengths are shown rounded to a chosen step; the angle always to 0.01°. Rounding is
   // display only: calculations keep full precision.
   const STEPS = { "0.001": [0.001, 3], "0.01": [0.01, 2], "0.1": [0.1, 1], "0.5": [0.5, 1], "1": [1, 0] };
@@ -491,13 +491,13 @@ svg text { font-family: var(--font-mono); }
     LS: "Valid when T < S ≤ √(L² + T²) and 0 < t < AF. Above L two angles fit; pick one in the Check bar.",
     LH: "Valid when T < H ≤ √(L² + T²) and 0 < t < AF. Above L two angles fit; pick one in the Check bar.",
     SH: "Valid when S > T, H > T and 0 < t < AF. If several angles fit, pick one in the Check bar.",
-    LA: "Valid when 0° < ∠BAF < 90°, L > T and 0 < t < AF.",
-    SA: "Valid when 0° < ∠BAF < 90°, S > T(sin θ + cos θ) and 0 < t < AF.",
-    AH: "Valid when 0° < ∠BAF < 90°, H > T(sin θ + cos θ) and 0 < t < AF.",
+    LA: "Valid when 0° < θ < 90°, L > T and 0 < t < AF.",
+    SA: "Valid when 0° < θ < 90°, S > T(sin θ + cos θ) and 0 < t < AF.",
+    AH: "Valid when 0° < θ < 90°, H > T(sin θ + cos θ) and 0 < t < AF.",
     Lh: "Valid when L > T, h > 0 and 0 < t < AF. Two angles usually fit, a flat one and a steep one; pick one in the Check bar. With h set, changing t moves the board.",
     Sh: "Valid when S > T, h > 0 and 0 < t < AF. If several angles fit, pick one in the Check bar. With h set, changing t moves the board.",
     Hh: "Valid when H > T, h > 0 and 0 < t < AF. If several angles fit, pick one in the Check bar. With h set, changing t moves the board.",
-    Ah: "Valid when 0° < ∠BAF < 90°, h > T sin θ − t tan θ and 0 < t < AF. With h set, changing t moves the board."
+    Ah: "Valid when 0° < θ < 90°, h > T sin θ − t tan θ and 0 < t < AF. With h set, changing t moves the board."
   };
 
   // Formula ids for a pair: the calculated values, each by the formula that produces it
@@ -603,7 +603,7 @@ svg text { font-family: var(--font-mono); }
         if (W === L) g.warn = n === "S" ? "S = L. The board would also fit lying flat" : "H = L. The board would also fit standing upright";
       }
     } else if (ks.includes("A")) {
-      if (!(v.A > 0 && v.A < 90)) msg = "Need 0° < ∠BAF < 90°";
+      if (!(v.A > 0 && v.A < 90)) msg = "Need 0° < θ < 90°";
       else {
         th = v.A * DEG;
         const c = Math.cos(th), s = Math.sin(th), o = ks.find((k) => k !== "A");
