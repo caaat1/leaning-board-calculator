@@ -165,7 +165,7 @@ legend { padding: 0; margin-bottom: 4px; }
   padding: 2px 0;
 }
 .in-row .sym { font-family: var(--font-mono); font-weight: 500; font-size: 16px; }
-.in-row .lbl { color: var(--muted); font-size: 13.5px; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; }
+.in-row .lbl { color: var(--muted); font-size: 13.5px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
 .in-row .lt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .in-row input.num {
   width: 100%; font: 500 15px var(--font-mono); text-align: right;
@@ -183,8 +183,8 @@ legend { padding: 0; margin-bottom: 4px; }
 
 /* Calculated field: reads as an output, not an input */
 .tag {
-  visibility: hidden; flex: none; margin-left: auto; line-height: 1.3; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .05em;
-  text-transform: uppercase; padding: 0 3px; border-radius: 3px;
+  visibility: hidden; flex: none; line-height: 1.3; font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em;
+  text-transform: uppercase; padding: 0 5px; border-radius: 3px;
   background: var(--calc-bg); color: var(--calc-fg); border: 1px solid var(--calc-rule);
 }
 .in-row.is-calc .tag { visibility: visible; }
@@ -328,7 +328,7 @@ svg text { font-family: var(--font-mono); }
             <div class="in-row">
               <label class="pick" title="Enter L"><input type="checkbox" id="pick-L" aria-label="Enter L" checked></label>
               <span class="sym">L</span>
-              <label class="lbl" for="in-L"><span class="lt">Length, AB</span><span class="tag" title="Calculated">calc</span></label>
+              <label class="lbl" for="in-L"><span class="lt">Length, AB</span><span class="tag">calculated</span></label>
               <input class="num" id="in-L" data-key="L" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="440">
               <div class="slide">
                 <input type="range" id="in-L-range" min="0" max="100" step="0.5" value="0" aria-label="Length AB">
@@ -338,7 +338,7 @@ svg text { font-family: var(--font-mono); }
             <div class="in-row">
               <label class="pick" title="Enter S"><input type="checkbox" id="pick-S" aria-label="Enter S" checked></label>
               <span class="sym">S</span>
-              <label class="lbl" for="in-S"><span class="lt">Span, A′F</span><span class="tag" title="Calculated">calc</span></label>
+              <label class="lbl" for="in-S"><span class="lt">Span, A′F</span><span class="tag">calculated</span></label>
               <input class="num" id="in-S" data-key="S" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="421">
               <div class="slide">
                 <input type="range" id="in-S-range" min="0" max="100" step="0.5" value="0" aria-label="Span A′F">
@@ -348,7 +348,7 @@ svg text { font-family: var(--font-mono); }
             <div class="in-row">
               <label class="pick" title="Enter H"><input type="checkbox" id="pick-H" aria-label="Enter H"></label>
               <span class="sym">H</span>
-              <label class="lbl" for="in-H"><span class="lt">Height, FC′</span><span class="tag" title="Calculated">calc</span></label>
+              <label class="lbl" for="in-H"><span class="lt">Height, FC′</span><span class="tag">calculated</span></label>
               <input class="num" id="in-H" data-key="H" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="289.398">
               <div class="slide">
                 <input type="range" id="in-H-range" min="0" max="100" step="0.5" value="0" aria-label="Height FC′">
@@ -358,7 +358,7 @@ svg text { font-family: var(--font-mono); }
             <div class="in-row">
               <label class="pick" title="Enter h"><input type="checkbox" id="pick-h" aria-label="Enter h"></label>
               <span class="sym">h</span>
-              <label class="lbl" for="in-h"><span class="lt">Support height, FG</span><span class="tag" title="Calculated">calc</span></label>
+              <label class="lbl" for="in-h"><span class="lt">Support height, FG</span><span class="tag">calculated</span></label>
               <input class="num" id="in-h" data-key="h" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="150.793">
               <div class="slide">
                 <input type="range" id="in-h-range" min="0" max="100" step="0.5" value="0" aria-label="Support height FG">
@@ -368,7 +368,7 @@ svg text { font-family: var(--font-mono); }
             <div class="in-row">
               <label class="pick" title="Enter θ"><input type="checkbox" id="pick-A" aria-label="Enter θ"></label>
               <span class="sym">θ</span>
-              <label class="lbl" for="in-A"><span class="lt">Tilt, ∠BAF (°)</span><span class="tag" title="Calculated">calc</span></label>
+              <label class="lbl" for="in-A"><span class="lt">Tilt, ∠BAF (°)</span><span class="tag">calculated</span></label>
               <input class="num" id="in-A" data-key="A" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="30">
               <div class="slide">
                 <input type="range" id="in-A-range" min="0" max="90" step="0.1" value="30" list="angle-ticks" aria-label="Tilt θ, degrees">
