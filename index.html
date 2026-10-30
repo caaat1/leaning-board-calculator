@@ -219,8 +219,9 @@ legend { padding: 0; margin-bottom: 4px; }
 .check.ok { background: var(--ok-bg); color: var(--ok-fg); }
 .check.bad { background: var(--bad-bg); color: var(--bad-fg); }
 .check.warn { background: var(--warn-bg); color: var(--warn-fg); }
-.check span:first-child { font-family: var(--font-display); letter-spacing: .06em; text-transform: uppercase; font-size: 13px; }
-.check span:last-child { text-align: right; }
+.check > span:first-child { font-family: var(--font-display); letter-spacing: .06em; text-transform: uppercase; font-size: 13px; }
+.check > span:last-child { text-align: right; }
+.check-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px 10px; flex-wrap: wrap; }
 
 details { border-top: 1px solid var(--rule); padding-top: 10px; }
 summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
@@ -402,14 +403,13 @@ svg text { font-family: var(--font-mono); }
         </div>
       </div>
 
-      <div class="check ok" id="check" role="status"><span>Check</span><span id="check-msg">OK</span></div>
+      <div class="check ok" id="check"><span>Check</span><span class="check-right"><span id="check-msg" role="status">OK</span><span class="seg" id="check-pick" role="radiogroup" aria-label="Angle to use" hidden></span></span></div>
 
-      <details>
+      <details id="inter">
         <summary>Intermediate values</summary>
         <div class="inter">
           <div id="i-d2"><span>d² = L² + T²</span><span id="o-d2">—</span></div>
           <div id="i-r"><span id="r-lbl">r = √(L² + T² − S²)</span><span id="o-r">—</span></div>
-          <div><span>t used</span><span id="o-tu">—</span></div>
         </div>
       </details>
     </section>
@@ -475,15 +475,15 @@ svg text { font-family: var(--font-mono); }
   }
   const fmtGeo = (k, v) => (k === "A" ? v.toFixed(2) : fmtLen(v));
   const HINTS = {
-    LS: "Valid when T < S ≤ L and 0 < t < AF. A span between L and √(L² + T²) fits two angles, so enter the one you want as ∠BAF.",
-    LH: "Valid when T < H ≤ L and 0 < t < AF. A height between L and √(L² + T²) fits two angles, so enter the one you want as ∠BAF.",
-    SH: "Valid when S > T, H > T, only one angle fits, and 0 < t < AF.",
+    LS: "Valid when T < S ≤ √(L² + T²) and 0 < t < AF. Above L two angles fit; pick one in the Check bar.",
+    LH: "Valid when T < H ≤ √(L² + T²) and 0 < t < AF. Above L two angles fit; pick one in the Check bar.",
+    SH: "Valid when S > T, H > T and 0 < t < AF. If several angles fit, pick one in the Check bar.",
     LA: "Valid when 0° < ∠BAF < 90°, L > T and 0 < t < AF.",
     SA: "Valid when 0° < ∠BAF < 90°, S > T(sin θ + cos θ) and 0 < t < AF.",
     AH: "Valid when 0° < ∠BAF < 90°, H > T(sin θ + cos θ) and 0 < t < AF.",
-    Lh: "Valid when L > T, h > 0 and 0 < t < AF. Two angles can fit, in which case enter the one you want as ∠BAF. With h set, changing t moves the board.",
-    Sh: "Valid when S > T, h > 0, only one angle fits, and 0 < t < AF. With h set, changing t moves the board.",
-    Hh: "Valid when H > T, h > 0, only one angle fits, and 0 < t < AF. With h set, changing t moves the board.",
+    Lh: "Valid when L > T, h > 0 and 0 < t < AF. Two angles usually fit, a flat one and a steep one; pick one in the Check bar. With h set, changing t moves the board.",
+    Sh: "Valid when S > T, h > 0 and 0 < t < AF. If several angles fit, pick one in the Check bar. With h set, changing t moves the board.",
+    Hh: "Valid when H > T, h > 0 and 0 < t < AF. If several angles fit, pick one in the Check bar. With h set, changing t moves the board.",
     Ah: "Valid when 0° < ∠BAF < 90°, h > T sin θ − t tan θ and 0 < t < AF. With h set, changing t moves the board."
   };
 
@@ -505,6 +505,8 @@ svg text { font-family: var(--font-mono); }
 
   // The two entered values, least recently touched first. Ticking a third lets the first go.
   let entered = DEFAULTS.entered.slice();
+  // When several angles fit, which one to use: an index into them, flattest first
+  let rootPick = 0;
   const pairKey = () => GEO.filter((k) => entered.includes(k)).join("");
 
   // A calculated field shows a rounded value. Its exact value is kept, so switching
@@ -536,7 +538,7 @@ svg text { font-family: var(--font-mono); }
   function solvePair(p, vp, q, vq, T, t) {
     const lenAt = (a) => { const [ap, bp] = LIN[p](Math.cos(a), Math.sin(a), T, t); return (vp - bp) / ap; };
     const f = (a) => { const [aq, bq] = LIN[q](Math.cos(a), Math.sin(a), T, t); return aq * lenAt(a) + bq - vq; };
-    const N = 900, end = Math.PI / 2, roots = [];
+    const N = 3600, end = Math.PI / 2, roots = [];        // 0.025° steps: close pairs of angles are still told apart
     let a0 = 1e-9, f0 = f(a0);
     for (let i = 1; i <= N; i++) {
       const a1 = i === N ? end - 1e-9 : (end * i) / N, f1 = f(a1);
@@ -562,7 +564,7 @@ svg text { font-family: var(--font-mono); }
   function solve(key, v) {
     const T = v.T, t = v.same ? v.T : v.t;
     const g = { key, T, t, L: NaN, S: NaN, H: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null, warn: "" };
-    let msg = "OK", th = NaN, L = NaN;
+    let msg = "OK", th = NaN, L = NaN, cands = null;     // cands: every fitting {th, L} when solved by search
 
     const ks = key.split("");
     const missing = ks.concat("T").find((k) => !Number.isFinite(v[k])) || (ks.includes("h") && !Number.isFinite(t) ? "t" : null);
@@ -583,12 +585,9 @@ svg text { font-family: var(--font-mono); }
         const ang = (sg) => (n === "S"
           ? Math.atan2(T * W + sg * L * r, L * W - sg * T * r)
           : Math.atan2(L * W - sg * T * r, T * W + sg * L * r));
-        const t1 = ang(1), t2 = ang(-1);
-        if (W > L && r > 0) msg = `Two angles fit: ${(t1 / DEG).toFixed(2)}° or ${(t2 / DEG).toFixed(2)}°. Enter one as ∠BAF`;
-        else {
-          th = t1; g.d2 = d2; g.r = r;
-          if (W === L) g.warn = n === "S" ? "S = L. The board would also fit lying flat" : "H = L. The board would also fit standing upright";
-        }
+        g.d2 = d2; g.r = r;
+        cands = W > L && r > 0 ? [{ th: ang(1), L }, { th: ang(-1), L }] : [{ th: ang(1), L }];
+        if (W === L) g.warn = n === "S" ? "S = L. The board would also fit lying flat" : "H = L. The board would also fit standing upright";
       }
     } else if (ks.includes("A")) {
       if (!(v.A > 0 && v.A < 90)) msg = "Need 0° < ∠BAF < 90°";
@@ -611,9 +610,20 @@ svg text { font-family: var(--font-mono); }
       else {
         const roots = solvePair(p, v[p], q, v[q], T, t);
         if (roots.length === 0) msg = `No layout fits these ${NAMES[p]} and ${NAMES[q]}`;
-        else if (roots.length > 1) msg = `Angles that fit: ${roots.map((r) => (r.th / DEG).toFixed(2) + "°").join(", ")}. Enter one as ∠BAF`;
-        else { th = roots[0].th; L = roots[0].L; }
+        else cands = roots;
       }
+    }
+
+    // Several fitting angles are all real layouts: use the picked one and offer the others
+    if (msg === "OK" && cands) {
+      cands.sort((a, b) => a.th - b.th);
+      const i = Math.min(rootPick, cands.length - 1);
+      if (cands.length > 1) {
+        g.choices = cands.map((x) => x.th / DEG);
+        g.choice = i;
+        g.warn = (cands.length === 2 ? "Two" : String(cands.length)) + " angles fit";
+      }
+      ({ th, L } = cands[i]);
     }
 
     if (msg === "OK") {
@@ -670,11 +680,10 @@ svg text { font-family: var(--font-mono); }
       el.closest(".out-row").classList.toggle("bad", k === "BH" ? !g.ok : !g.geomOk);
     });
 
-    $("i-d2").hidden = $("i-r").hidden = !(key === "LS" || key === "LH");
+    $("inter").hidden = !(key === "LS" || key === "LH");     // only the closed forms have intermediate values
     $("r-lbl").textContent = key === "LH" ? "r = √(L² + T² − H²)" : "r = √(L² + T² − S²)";
     $("o-d2").textContent = fmt(g.d2, 3);
     $("o-r").textContent = fmtLen(g.r);
-    $("o-tu").textContent = fmtLen(g.t);
     $("rule-hint").textContent = HINTS[key];
 
     const c = $("check");
@@ -683,10 +692,27 @@ svg text { font-family: var(--font-mono); }
     c.classList.toggle("warn", !!warn);
     c.classList.toggle("bad", !g.ok);
     $("check-msg").textContent = warn ? g.warn : g.msg;
+    renderPicker(g);
 
     draw(g);
     save();
     if (!framed) history.replaceState(null, "", "#" + linkCode());   // the address always holds the layout
+  }
+
+  // Angle picker in the Check bar, shown when several angles fit. Rebuilt only when the
+  // angles or the choice change, keeping keyboard focus on it.
+  let pickSig = "";
+  function renderPicker(g) {
+    const box = $("check-pick");
+    const sig = g.choices ? g.choices.map((d) => d.toFixed(2)).join(",") + "|" + g.choice : "";
+    box.hidden = !g.choices;
+    if (sig === pickSig) return;
+    pickSig = sig;
+    const hadFocus = box.contains(document.activeElement);
+    box.innerHTML = !g.choices ? "" : g.choices.map((d, i) =>
+      `<label><input type="radio" name="root" value="${i}"${i === g.choice ? " checked" : ""}><span>${d.toFixed(2)}°</span></label>`).join("");
+    box.querySelectorAll("input").forEach((el) => el.addEventListener("change", () => { rootPick = Number(el.value); render(); }));
+    if (hadFocus && box.querySelector("input:checked")) box.querySelector("input:checked").focus();
   }
 
   // Length sliders (L, S, H). Ranges follow what's known:
@@ -706,10 +732,13 @@ svg text { font-family: var(--font-mono); }
     if (k === "h") { lo = 0; hi = isIn ? 2 * v : g.BF; }   // the support sits between the floor and B
     else if (k === "L") {
       const other = entered.find((x) => x !== "L");
-      if (isIn && (other === "S" || other === "H")) { lo = read(other); hi = 2 * lo; }
+      if (isIn && (other === "S" || other === "H")) { const w = read(other); lo = Math.sqrt(Math.max(0, w * w - T * T)); hi = 2 * w; }
       else hi = isIn ? 2 * v : Math.hypot(g.S, g.H);
-    } else if (key === "L" + k) hi = read("L");
+    } else if (key === "L" + k) hi = Math.hypot(read("L"), T);
     else hi = isIn ? 2 * v : Math.hypot(g.L, g.T);
+    // Start the range on the step grid, so dragging lands on round values
+    const st = STEPS[roundTo][0];
+    lo = Number((Math.ceil(lo / st - 1e-9) * st).toFixed(6));
     if (!(Number.isFinite(lo) && Number.isFinite(hi) && hi > lo)) return;
     el.min = String(lo); el.max = String(hi);
     if (Number.isFinite(v)) el.value = String(v);
@@ -941,6 +970,7 @@ svg text { font-family: var(--font-mono); }
       Object.keys(field).forEach((k) => { if (typeof s[k] === "string") field[k].value = s[k]; });
       inSame.checked = !!s.same;
       if (STEPS[s.round]) roundTo = s.round;
+      if (Number.isInteger(s.pick) && s.pick >= 0) rootPick = s.pick;
       if (validPair(s.entered)) entered = s.entered.slice();
       else if (s.calc) entered = { A: ["L", "S"], S: ["L", "A"], L: ["S", "A"] }[s.calc] || entered;   // older saves
       GEO.forEach((k) => {
@@ -954,7 +984,7 @@ svg text { font-family: var(--font-mono); }
       const v = {};
       Object.keys(field).forEach((k) => { v[k] = field[k].value; });
       localStorage.setItem(KEY, JSON.stringify(Object.assign(v, {
-        entered: entered.slice(), same: inSame.checked, round: roundTo, shown: Object.assign({}, shown), exact: Object.assign({}, exact)
+        entered: entered.slice(), same: inSame.checked, round: roundTo, pick: rootPick, shown: Object.assign({}, shown), exact: Object.assign({}, exact)
       })));
     } catch (e) {}
   }
@@ -965,6 +995,7 @@ svg text { font-family: var(--font-mono); }
     if (entered.includes(k)) { picks[k].checked = true; return; }
     entered.push(k);
     if (entered.length > 2) entered.shift();
+    rootPick = 0;                                     // a new pair starts from the flattest angle
     render();
   }
   // Typing into a value counts as touching it, and drops any exact value kept from when it was calculated.
@@ -1003,6 +1034,7 @@ svg text { font-family: var(--font-mono); }
     if (inSame.checked) parts.push("same");
     else if (Number.isFinite(t)) parts.push("t" + enc(t));
     parts.push("q" + roundTo.replace(".", "p"));
+    if (rootPick > 0) parts.push("r" + rootPick);
     return parts.join("-");
   }
   function applyCode(code) {
@@ -1011,12 +1043,14 @@ svg text { font-family: var(--font-mono); }
     if (parts[0] !== "v1" || !validPair(pair)) return false;
     entered = pair;
     inSame.checked = parts.includes("same");
+    rootPick = 0;
     GEO.forEach((k) => { shown[k] = exact[k] = null; });
     parts.slice(2).forEach((tok) => {
-      const m = /^([LSHhATtq])(\d+(?:p\d+)?)$/.exec(tok);
+      const m = /^([LSHhATtqr])(\d+(?:p\d+)?)$/.exec(tok);
       if (!m) return;
       const text = m[2].replace("p", ".");
       if (m[1] === "q") { if (STEPS[text]) roundTo = text; return; }
+      if (m[1] === "r") { rootPick = Number(text) | 0; return; }
       const v = Number(text);
       // A long exact value is shown rounded but kept exact, so the shared layout matches to the digit
       if (GEO.includes(m[1]) && Number(fmtGeo(m[1], v)) !== v) {
@@ -1083,6 +1117,7 @@ svg text { font-family: var(--font-mono); }
     GEO.forEach((k) => { shown[k] = exact[k] = null; });
     inSame.checked = DEFAULTS.same;
     entered = DEFAULTS.entered.slice();
+    rootPick = 0;
     render();
   });
   render();
