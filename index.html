@@ -393,7 +393,7 @@ svg text { font-family: var(--font-mono); }
           <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ = H − BC′</span><span class="val" id="o-BF">—</span></div>
           <div class="out-row r-ae"><span class="sym">AA′ = CC′</span><span class="formula">T sin θ</span><span class="val" id="o-AE">—</span></div>
           <div class="out-row r-de"><span class="sym">DA′ = BC′</span><span class="formula">T cos θ</span><span class="val" id="o-DE">—</span></div>
-          <div class="out-row r-bh"><span class="sym">BG</span><span class="formula">BF − FG</span><span class="val" id="o-BH">—</span></div>
+          <div class="out-row r-bh"><span class="sym">BG</span><span class="formula">BF − h</span><span class="val" id="o-BH">—</span></div>
         </div>
       </div>
 
@@ -419,7 +419,7 @@ svg text { font-family: var(--font-mono); }
     <section class="panel drawing" aria-labelledby="h-drawing">
       <h2 id="h-drawing">Layout, to scale</h2>
       <div class="sheet"><svg id="svg" viewBox="0 0 680 480" role="img" aria-label="Scaled drawing of the board, support and color-coded segments"></svg></div>
-      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows. The support's height doesn't matter, only its thickness t = GH.</p>
+      <p class="cap">The drawing redraws to scale as you type. Dimension colors match the result rows; the input values L, S and H are dimensioned in black. The support's height doesn't matter, only its thickness t = GH.</p>
     </section>
   </div>
 
@@ -450,8 +450,7 @@ svg text { font-family: var(--font-mono); }
         <code><span class="k k-bf">BF</span> = L sin θ = H − <span class="k k-de">BC′</span></code>
         <code><span class="k k-ae">AA′</span> = <span class="k k-ae">CC′</span> = T sin θ</code>
         <code><span class="k k-de">DA′</span> = <span class="k k-de">BC′</span> = T cos θ</code>
-        <code><span class="k k-fh">FG</span> = BF(AF − t) / AF</code>
-        <code><span class="k k-bh">BG</span> = BF − FG = t tan θ</code>
+        <code><span class="k k-bh">BG</span> = BF − <span class="k k-fh">h</span> = t tan θ</code>
       </div>
     </div>
     </div>
@@ -724,7 +723,8 @@ svg text { font-family: var(--font-mono); }
   const COL = {
     af: ["var(--af-line)", "var(--af-text)"], bf: ["var(--bf-line)", "var(--bf-text)"],
     ae: ["var(--ae-line)", "var(--ae-text)"], de: ["var(--de-line)", "var(--de-text)"],
-    fh: ["var(--fh-line)", "var(--fh-text)"], bh: ["var(--bh-line)", "var(--bh-text)"]
+    fh: ["var(--fh-line)", "var(--fh-text)"], bh: ["var(--bh-line)", "var(--bh-text)"],
+    ink: ["var(--ink)", "var(--ink)"]                      // L, S and H: the input values
   };
   const f1 = (n) => n.toFixed(1);
   const line = (x1, y1, x2, y2, attrs) => `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" ${attrs}/>`;
@@ -753,11 +753,12 @@ svg text { font-family: var(--font-mono); }
     const placed = [];
     let out = "";
     specs.forEach(({ x, y, dx, dy, ch }) => {
+      // Labels are about 8.4 units wide per character; keep a clear gap so neighbours don't read as one name
       let px = x, py = y;
-      for (let i = 0; i < 10 && placed.some((p) => Math.abs(p[0] - px) < 11 * u && Math.abs(p[1] - py) < 16 * u); i++) {
-        px += dx * 3 * u; py += dy * 3 * u;
-      }
-      placed.push([px, py]);
+      const w = ch.length * 8.4 * u;
+      const hits = () => placed.some((p) => Math.abs(p[0] - px) < (p[2] + w) / 2 + 5 * u && Math.abs(p[1] - py) < 16 * u);
+      for (let i = 0; i < 14 && hits(); i++) { px += dx * 3 * u; py += dy * 3 * u; }
+      placed.push([px, py, w]);
       out += text(px, py, ch, `class="v-label" font-size="${f1(14 * u)}" text-anchor="middle" dominant-baseline="central"`);
     });
     return out;
@@ -775,7 +776,7 @@ svg text { font-family: var(--font-mono); }
       svg.setAttribute("aria-label", "No drawing: the values are out of range");
       return;
     }
-    const mL = 100 * u, mR = 140 * u, mT = 50 * u, mB = 90 * u;
+    const mL = 100 * u, mR = 182 * u, mT = 50 * u, mB = 118 * u;
     const availW = W - mL - mR, availH = H - mT - mB;
     const k = Math.min(availW / g.S, availH / (g.BF + g.DE));
     const ox = mL + (availW - g.S * k) / 2, oy = H - mB;
@@ -834,12 +835,32 @@ svg text { font-family: var(--font-mono); }
 
     // Dimensions
     s += vDim(u, E[0] - 36 * u, D[1], oy, COL.de, "DA′", "left");
-    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.fh, "FG", "right") + vDim(u, F[0] + 36 * u, B[1], Hy, COL.bh, "BG", "right");
+    if (support) s += vDim(u, F[0] + 36 * u, Hy, oy, COL.fh, "h", "right") + vDim(u, F[0] + 36 * u, B[1], Hy, COL.bh, "BG", "right");
     s += vDim(u, F[0] + 82 * u, B[1], oy, COL.bf, "BF", "right");
     let aeX = (E[0] + A[0]) / 2, afX = (A[0] + F[0]) / 2;
     if (afX - aeX < 24 * u) { const mid = (aeX + afX) / 2; aeX = mid - 12 * u; afX = mid + 12 * u; }
     s += hDim(u, oy + 40 * u, E[0], A[0], COL.ae, "AA′", aeX);
     s += hDim(u, oy + 40 * u, A[0], F[0], COL.af, "AF", afX);
+    // BC′ stacks on BF; H spans the whole wall; S spans the whole floor
+    s += vDim(u, F[0] + 82 * u, C[1], B[1], COL.de, "BC′", "right");
+    s += vDim(u, F[0] + 126 * u, C[1], oy, COL.ink, "H", "right");
+    s += hDim(u, oy + 76 * u, E[0], F[0], COL.ink, "S", (E[0] + F[0]) / 2);
+
+    // CC′ above the dotted line, with an extension line up from C
+    const ccY = C[1] - 30 * u, tkc = 6 * u, stc = `stroke="${COL.ae[0]}" stroke-width="${f1(2 * u)}"`;
+    const ext = `class="guide" stroke-width="${f1(0.8 * u)}" opacity=".7"`;
+    s += line(C[0], C[1] - 24 * u, C[0], ccY - 2 * u, ext);
+    s += line(C[0], ccY, F[0], ccY, stc) + line(C[0], ccY - tkc, C[0], ccY + tkc, stc) + line(F[0], ccY - tkc, F[0], ccY + tkc, stc);
+    s += text((C[0] + F[0]) / 2, ccY - 12 * u, "CC′", `class="d-label" font-size="${f1(13 * u)}" fill="${COL.ae[1]}" text-anchor="middle" dominant-baseline="central"`);
+
+    // L runs parallel to the board, outside its top edge DC
+    const nrm = [-sn, -cs], off = 22 * u;
+    const at = (P, d) => [P[0] + nrm[0] * d, P[1] + nrm[1] * d];
+    const D2 = at(D, off), C2 = at(C, off), sti = `stroke="var(--ink)" stroke-width="${f1(1.5 * u)}"`;
+    s += line(...at(D, 4 * u), ...at(D, off + 4 * u), ext) + line(...at(C, 4 * u), ...at(C, off + 4 * u), ext);
+    s += line(...D2, ...C2, sti) + line(...at(D, off - tkc), ...at(D, off + tkc), sti) + line(...at(C, off - tkc), ...at(C, off + tkc), sti);
+    const Lm = at([(D[0] + C[0]) / 2, (D[1] + C[1]) / 2], off + 12 * u), Lang = (Math.atan2(C[1] - D[1], C[0] - D[0]) / DEG).toFixed(2);
+    s += `<text x="${f1(Lm[0])}" y="${f1(Lm[1])}" transform="rotate(${Lang} ${f1(Lm[0])} ${f1(Lm[1])})" class="d-label" font-size="${f1(13 * u)}" fill="var(--ink)" text-anchor="middle" dominant-baseline="central">L</text>`;
 
     // Scale bar, bottom right: a round length (1, 2 or 5 × 10ⁿ) about 100 units of drawing long
     const raw = 100 * u / k, pow = Math.pow(10, Math.floor(Math.log10(raw)));
