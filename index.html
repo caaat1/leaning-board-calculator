@@ -1249,7 +1249,24 @@ svg text { font-family: var(--font-mono); }
     field[k].addEventListener("input", () => edited(k));
     field[k].addEventListener("keydown", step);
   });
-  inSame.addEventListener("change", render);
+  // t = T: the t row slides away and back (the grid gap is cancelled with a negative top margin while it animates)
+  let rowAnim = null;
+  inSame.addEventListener("change", () => {
+    const row = $("row-t"), hide = inSame.checked;
+    if (rowAnim) rowAnim.finish();
+    render();
+    if (!row.animate || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    row.hidden = false;
+    const full = row.offsetHeight;
+    row.style.overflow = "hidden"; row.style.boxSizing = "border-box";
+    const shut = { height: "0px", marginTop: "-4px", opacity: 0 }, wide = { height: full + "px", marginTop: "0px", opacity: 1 };
+    const a = row.animate(hide ? [wide, shut] : [shut, wide], { duration: 240, easing: "ease" });
+    rowAnim = a;
+    a.onfinish = () => {
+      rowAnim = null; row.style.overflow = ""; row.style.boxSizing = "";
+      row.hidden = inSame.checked;
+    };
+  });
   ["L", "S", "H", "h"].forEach((k) => {
     $("in-" + k + "-range").addEventListener("input", (e) => {
       // Values must exceed T; L may equal S or H
