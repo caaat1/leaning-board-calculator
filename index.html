@@ -33,12 +33,18 @@
   --support-fill: #e2e5df;
   --support-line: #858c86;
 
-  /* Segment colors: line = dimension strokes, text = labels (darker for contrast), bg/fg = result rows */
-  --af-line: #D85A30; --af-text: #993C1D; --af-bg: #F5C4B3; --af-fg: #4A1B0C;
-  --bf-line: #7F77DD; --bf-text: #534AB7; --bf-bg: #CECBF6; --bf-fg: #26215C;
-  --ae-line: #BA7517; --ae-text: #854F0B; --ae-bg: #FAC775; --ae-fg: #412402;
-  --de-line: #D4537E; --de-text: #993556; --de-bg: #F4C0D1; --de-fg: #4B1528;
-  --bh-line: #378ADD; --bh-text: #185FA5; --bh-bg: #B5D4F4; --bh-fg: #042C53;
+  /* Segment colors: one hue per result. Every color is oklch(role lightness, role chroma, hue),
+     so all results sit at exactly the same distance from their row tint. Dark mode changes only
+     the role values below, never the hues. */
+  --af-h: 40; --ae-h: 85; --bh-h: 240; --bf-h: 300; --de-h: 355;
+  --line-l: 0.64; --line-c: 0.15;      /* dimension lines in the drawing */
+  --text-l: 0.47; --text-c: 0.13;      /* labels in the drawing, keys in the formulas, result-row text */
+  --tint-l: 0.955; --tint-c: 0.028;    /* result-row backgrounds */
+  --af-line: oklch(var(--line-l) var(--line-c) var(--af-h)); --af-text: oklch(var(--text-l) var(--text-c) var(--af-h)); --af-bg: oklch(var(--tint-l) var(--tint-c) var(--af-h));
+  --bf-line: oklch(var(--line-l) var(--line-c) var(--bf-h)); --bf-text: oklch(var(--text-l) var(--text-c) var(--bf-h)); --bf-bg: oklch(var(--tint-l) var(--tint-c) var(--bf-h));
+  --ae-line: oklch(var(--line-l) var(--line-c) var(--ae-h)); --ae-text: oklch(var(--text-l) var(--text-c) var(--ae-h)); --ae-bg: oklch(var(--tint-l) var(--tint-c) var(--ae-h));
+  --de-line: oklch(var(--line-l) var(--line-c) var(--de-h)); --de-text: oklch(var(--text-l) var(--text-c) var(--de-h)); --de-bg: oklch(var(--tint-l) var(--tint-c) var(--de-h));
+  --bh-line: oklch(var(--line-l) var(--line-c) var(--bh-h)); --bh-text: oklch(var(--text-l) var(--text-c) var(--bh-h)); --bh-bg: oklch(var(--tint-l) var(--tint-c) var(--bh-h));
 
   --ok-bg: #e4f0d6; --ok-fg: #3B6D11;
   --warn-bg: #FAEEDA; --warn-fg: #854F0B;
@@ -55,11 +61,7 @@
     --input-bg: #232925; --input-rule: #4a4636;
     --calc-bg: #1e332c; --calc-fg: #a9dcca; --calc-rule: #2f5246;
     --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
-    --af-text: #F0997B; --af-bg: #712B13; --af-fg: #F5C4B3;
-    --bf-text: #AFA9EC; --bf-bg: #3C3489; --bf-fg: #CECBF6;
-    --ae-text: #EF9F27; --ae-bg: #633806; --ae-fg: #FAC775;
-    --de-text: #ED93B1; --de-bg: #72243E; --de-fg: #F4C0D1;
-    --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
+    --text-l: 0.80; --text-c: 0.11; --tint-l: 0.29; --tint-c: 0.035;
     --ok-bg: #27500A; --ok-fg: #C0DD97;
     --warn-bg: #633806; --warn-fg: #FAC775;
     --bad-bg: #791F1F; --bad-fg: #F7C1C1;
@@ -72,11 +74,7 @@
   --input-bg: #232925; --input-rule: #4a4636;
   --calc-bg: #1e332c; --calc-fg: #a9dcca; --calc-rule: #2f5246;
   --board-fill: #4a3c29; --support-fill: #2b322e; --support-line: #8f9690;
-  --af-text: #F0997B; --af-bg: #712B13; --af-fg: #F5C4B3;
-  --bf-text: #AFA9EC; --bf-bg: #3C3489; --bf-fg: #CECBF6;
-  --ae-text: #EF9F27; --ae-bg: #633806; --ae-fg: #FAC775;
-  --de-text: #ED93B1; --de-bg: #72243E; --de-fg: #F4C0D1;
-  --bh-text: #85B7EB; --bh-bg: #0C447C; --bh-fg: #B5D4F4;
+  --text-l: 0.80; --text-c: 0.11; --tint-l: 0.29; --tint-c: 0.035;
   --ok-bg: #27500A; --ok-fg: #C0DD97;
   --warn-bg: #633806; --warn-fg: #FAC775;
   --bad-bg: #791F1F; --bad-fg: #F7C1C1;
@@ -206,11 +204,11 @@ legend { padding: 0; margin-bottom: 4px; }
   font-variant-numeric: tabular-nums;
 }
 .out-row.bad .val { color: var(--bad-fg); background: var(--bad-bg); padding: 0 6px; border-radius: 3px; }
-.r-af { --row-bg: var(--af-bg); --row-fg: var(--af-fg); }
-.r-bf { --row-bg: var(--bf-bg); --row-fg: var(--bf-fg); }
-.r-ae { --row-bg: var(--ae-bg); --row-fg: var(--ae-fg); }
-.r-de { --row-bg: var(--de-bg); --row-fg: var(--de-fg); }
-.r-bh { --row-bg: var(--bh-bg); --row-fg: var(--bh-fg); }
+.r-af { --row-bg: var(--af-bg); --row-fg: var(--af-text); }
+.r-bf { --row-bg: var(--bf-bg); --row-fg: var(--bf-text); }
+.r-ae { --row-bg: var(--ae-bg); --row-fg: var(--ae-text); }
+.r-de { --row-bg: var(--de-bg); --row-fg: var(--de-text); }
+.r-bh { --row-bg: var(--bh-bg); --row-fg: var(--bh-text); }
 
 .check {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
