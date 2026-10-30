@@ -107,6 +107,13 @@ header { display: grid; gap: 6px; }
 .res-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .res-head h2 { margin: 0; }
 .round { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+/* "Round to" doubles as a quiet reset: plain text at the default, ↺ and a hover cue otherwise */
+button.round-reset { font: inherit; color: inherit; background: none; border: 0; padding: 2px 4px; margin: -2px -4px;
+  border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+button.round-reset:hover:not(:disabled) { color: var(--accent); text-decoration: underline dotted; text-underline-offset: 3px; }
+button.round-reset:disabled { cursor: default; }
+button.round-reset .rg { visibility: hidden; }
+button.round-reset:not(:disabled) .rg { visibility: visible; }
 .eyebrow {
   font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em;
   text-transform: uppercase; color: var(--accent);
@@ -397,7 +404,7 @@ svg text { font-family: var(--font-mono); }
       <div>
         <div class="res-head">
           <h2 id="h-results">Results</h2>
-          <div class="round"><span id="round-lbl">Round to</span>
+          <div class="round"><button type="button" class="round-reset" id="round-reset" title="Back to the default, 0.5"><span id="round-lbl">Round to</span><span class="rg" aria-hidden="true">↺</span></button>
             <div class="seg" role="radiogroup" aria-labelledby="round-lbl">
               <label><input type="radio" name="round" value="0.001"><span>0.001</span></label>
               <label><input type="radio" name="round" value="0.01"><span>0.01</span></label>
@@ -471,7 +478,8 @@ svg text { font-family: var(--font-mono); }
   // Lengths are shown rounded to a chosen step; the angle always to 0.01°. Rounding is
   // display only: calculations keep full precision.
   const STEPS = { "0.001": [0.001, 3], "0.01": [0.01, 2], "0.1": [0.1, 1], "0.5": [0.5, 1], "1": [1, 0] };
-  let roundTo = "0.5";
+  const ROUND_DEFAULT = "0.5";
+  let roundTo = ROUND_DEFAULT;
   function fmtLen(v) {
     if (!Number.isFinite(v)) return "—";
     const [step, d] = STEPS[roundTo];
@@ -698,6 +706,7 @@ svg text { font-family: var(--font-mono); }
     c.classList.toggle("bad", !g.ok);
     $("check-msg").textContent = warn ? g.warn : g.msg;
     renderPicker(g);
+    $("round-reset").disabled = roundTo === ROUND_DEFAULT;
 
     draw(g);
     save();
@@ -1110,6 +1119,11 @@ svg text { font-family: var(--font-mono); }
       field[k].value = fmtLen(Math.max(floor, Number(e.target.value)));
       edited(k);
     });
+  });
+  $("round-reset").addEventListener("click", () => {
+    roundTo = ROUND_DEFAULT;
+    document.querySelectorAll('input[name="round"]').forEach((el) => { el.checked = el.value === roundTo; });
+    render();
   });
   $("in-A-range").addEventListener("input", (e) => {
     field.A.value = Math.min(89.9, Math.max(0.1, Number(e.target.value))).toFixed(1);   // the ends are not valid angles
