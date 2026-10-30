@@ -103,12 +103,15 @@ body {
 
 header { display: grid; gap: 6px; }
 .head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.theme { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
-.theme label { position: relative; cursor: pointer; }
-.theme input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.theme span { display: block; font: 500 12px var(--font-mono); padding: 3px 10px; border-radius: 4px; color: var(--muted); }
-.theme input:checked + span { background: var(--calc-bg); color: var(--calc-fg); }
-.theme input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+.seg label { position: relative; cursor: pointer; }
+.seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.seg span { display: block; font: 500 12px var(--font-mono); padding: 3px 10px; border-radius: 4px; color: var(--muted); }
+.seg input:checked + span { background: var(--calc-bg); color: var(--calc-fg); }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+.res-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.res-head h2 { margin: 0; }
+.round { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
 .eyebrow {
   font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .08em;
   text-transform: uppercase; color: var(--accent);
@@ -276,7 +279,7 @@ svg text { font-family: var(--font-mono); }
   <header>
     <div class="head-row">
       <div class="eyebrow">Board · support · span</div>
-      <div class="theme" role="radiogroup" aria-label="Color theme">
+      <div class="seg theme" role="radiogroup" aria-label="Color theme">
         <label><input type="radio" name="theme" value="auto" checked><span>Auto</span></label>
         <label><input type="radio" name="theme" value="light"><span>Light</span></label>
         <label><input type="radio" name="theme" value="dark"><span>Dark</span></label>
@@ -333,7 +336,18 @@ svg text { font-family: var(--font-mono); }
       </div>
 
       <div>
-        <h2 id="h-results">Results</h2>
+        <div class="res-head">
+          <h2 id="h-results">Results</h2>
+          <div class="round"><span id="round-lbl">Round to</span>
+            <div class="seg" role="radiogroup" aria-labelledby="round-lbl">
+              <label><input type="radio" name="round" value="0.001"><span>0.001</span></label>
+              <label><input type="radio" name="round" value="0.01"><span>0.01</span></label>
+              <label><input type="radio" name="round" value="0.1"><span>0.1</span></label>
+              <label><input type="radio" name="round" value="0.5" checked><span>0.5</span></label>
+              <label><input type="radio" name="round" value="1"><span>1</span></label>
+            </div>
+          </div>
+        </div>
         <div class="results" aria-labelledby="h-results" aria-live="polite">
           <div class="out-row r-af"><span class="sym">AF</span><span class="formula">L cos θ = S − AA′</span><span class="val" id="o-AF">—</span></div>
           <div class="out-row r-bf"><span class="sym">BF</span><span class="formula">L sin θ = H − BC′</span><span class="val" id="o-BF">—</span></div>
@@ -403,7 +417,17 @@ svg text { font-family: var(--font-mono); }
   const DEG = Math.PI / 180;
   const GEO = ["L", "S", "A", "H"];                  // any two are entered, the other two calculated
   const NAMES = { L: "L", S: "S", A: "∠BAF", H: "H", T: "T", t: "t" };
-  const DIGITS = { L: 3, S: 3, A: 2, H: 3 };
+  // Lengths are shown rounded to a chosen step; the angle always to 0.01°. Rounding is
+  // display only: calculations keep full precision.
+  const STEPS = { "0.001": [0.001, 3], "0.01": [0.01, 2], "0.1": [0.1, 1], "0.5": [0.5, 1], "1": [1, 0] };
+  let roundTo = "0.5";
+  function fmtLen(v) {
+    if (!Number.isFinite(v)) return "—";
+    const [step, d] = STEPS[roundTo];
+    const r = Math.round(v / step) * step;
+    return (r === 0 ? 0 : r).toFixed(d);
+  }
+  const fmtGeo = (k, v) => (k === "A" ? v.toFixed(2) : fmtLen(v));
   const HINTS = {
     LS: "Valid when T < S ≤ L and 0 < t < AF. A span between L and √(L² + T²) fits two angles, so enter the one you want as ∠BAF.",
     LH: "Valid when T < H ≤ L and 0 < t < AF. A height between L and √(L² + T²) fits two angles, so enter the one you want as ∠BAF.",
@@ -553,7 +577,7 @@ svg text { font-family: var(--font-mono); }
 
     GEO.filter((k) => !entered.includes(k)).forEach((k) => {
       const val = k === "A" ? g.deg : g[k];
-      if (g.geomOk && Number.isFinite(val)) { exact[k] = val; shown[k] = val.toFixed(DIGITS[k]); }
+      if (g.geomOk && Number.isFinite(val)) { exact[k] = val; shown[k] = fmtGeo(k, val); }
       else { exact[k] = NaN; shown[k] = "—"; }
       field[k].value = shown[k];
     });
@@ -562,15 +586,15 @@ svg text { font-family: var(--font-mono); }
 
     ["AF", "BF", "AE", "DE", "FH", "BH"].forEach((k) => {
       const el = $("o-" + k);
-      el.textContent = fmt(g[k], 3);
+      el.textContent = fmtLen(g[k]);
       el.closest(".out-row").classList.toggle("bad", k === "FH" || k === "BH" ? !g.ok : !g.geomOk);
     });
 
     $("i-d2").hidden = $("i-r").hidden = !(key === "LS" || key === "LH");
     $("r-lbl").textContent = key === "LH" ? "r = √(L² + T² − H²)" : "r = √(L² + T² − S²)";
     $("o-d2").textContent = fmt(g.d2, 3);
-    $("o-r").textContent = fmt(g.r, 3);
-    $("o-tu").textContent = fmt(g.t, 3);
+    $("o-r").textContent = fmtLen(g.r);
+    $("o-tu").textContent = fmtLen(g.t);
     $("rule-hint").textContent = HINTS[key];
 
     const c = $("check");
@@ -775,6 +799,7 @@ svg text { font-family: var(--font-mono); }
       if (!s || typeof s !== "object") return;
       Object.keys(field).forEach((k) => { if (typeof s[k] === "string") field[k].value = s[k]; });
       inSame.checked = !!s.same;
+      if (STEPS[s.round]) roundTo = s.round;
       if (validPair(s.entered)) entered = s.entered.slice();
       else if (s.calc) entered = { A: ["L", "S"], S: ["L", "A"], L: ["S", "A"] }[s.calc] || entered;   // older saves
       GEO.forEach((k) => {
@@ -788,7 +813,7 @@ svg text { font-family: var(--font-mono); }
       const v = {};
       Object.keys(field).forEach((k) => { v[k] = field[k].value; });
       localStorage.setItem(KEY, JSON.stringify(Object.assign(v, {
-        entered: entered.slice(), same: inSame.checked, shown: Object.assign({}, shown), exact: Object.assign({}, exact)
+        entered: entered.slice(), same: inSame.checked, round: roundTo, shown: Object.assign({}, shown), exact: Object.assign({}, exact)
       })));
     } catch (e) {}
   }
@@ -821,6 +846,10 @@ svg text { font-family: var(--font-mono); }
   }
 
   load();
+  document.querySelectorAll('input[name="round"]').forEach((el) => {
+    el.checked = el.value === roundTo;
+    el.addEventListener("change", () => { roundTo = el.value; render(); });
+  });
   Object.keys(field).forEach((k) => {
     field[k].addEventListener("input", () => edited(k));
     field[k].addEventListener("keydown", step);
