@@ -298,7 +298,7 @@ svg text { font-family: var(--font-mono); }
       </div>
     </div>
     <h1>Leaning Board Calculator</h1>
-    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, H and ∠BAF, and the page works out the other two along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
+    <p class="lede">A board of length L and thickness T leans at angle ∠BAF across span S between two verticals, resting on a support of thickness t. Enter any two of L, S, H, h and ∠BAF, and the page works out the other two along with every segment of the layout. Use any length unit, as long as it's the same for all lengths. A decimal point or a decimal comma both work.</p>
   </header>
 
   <div class="layout">
@@ -336,6 +336,16 @@ svg text { font-family: var(--font-mono); }
               <div class="slide">
                 <input type="range" id="in-H-range" min="0" max="100" step="0.5" value="0" aria-label="Height FC′">
                 <div class="slide-scale" aria-hidden="true"><span id="H-lo"></span><span id="H-mid"></span><span id="H-hi"></span></div>
+              </div>
+            </div>
+            <div class="in-row">
+              <label class="pick" title="Enter h"><input type="checkbox" id="pick-h" aria-label="Enter h"></label>
+              <span class="sym">h</span>
+              <label class="lbl" for="in-h">Support height, FG <span class="tag">calculated</span></label>
+              <input class="num" id="in-h" data-key="h" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="150.793">
+              <div class="slide">
+                <input type="range" id="in-h-range" min="0" max="100" step="0.5" value="0" aria-label="Support height FG">
+                <div class="slide-scale" aria-hidden="true"><span id="h-lo"></span><span id="h-mid"></span><span id="h-hi"></span></div>
               </div>
             </div>
             <div class="in-row">
@@ -421,15 +431,17 @@ svg text { font-family: var(--font-mono); }
       <div class="f-grid">
         <code id="f-thLS"><span class="k">θ</span> = atan2(TS + Lr, LS − Tr)</code>
         <code id="f-thLH"><span class="k">θ</span> = atan2(LH − Tr, TH + Lr)</code>
-        <code id="f-thSH"><span class="k">θ</span>: H cos θ − S sin θ = T cos 2θ</code>
+        <code id="f-thN"><span class="k">θ</span>: solved numerically from the two values</code>
       </div>
       <div class="f-grid">
         <code id="f-LS"><span class="k">L</span> = (S − T sin θ) / cos θ</code>
         <code id="f-LH"><span class="k">L</span> = (H − T cos θ) / sin θ</code>
+        <code id="f-Lh"><span class="k">L</span> = (h + t tan θ) / sin θ</code>
         <code id="f-S"><span class="k">S</span> = L cos θ + T sin θ</code>
         <code id="f-H"><span class="k">H</span> = L sin θ + T cos θ</code>
+        <code id="f-h"><span class="k">h</span> = L sin θ − t tan θ</code>
       </div>
-      <p class="f-note">where r = √(L² + T² − S²) with S entered, or √(L² + T² − H²) with H entered. With S and H entered, θ is solved numerically.</p>
+      <p class="f-note">where r = √(L² + T² − S²) with S entered, or √(L² + T² − H²) with H entered. Other pairs without ∠BAF are solved numerically.</p>
     </div>
     <div class="f-block">
       <h3>Segments</h3>
@@ -448,11 +460,11 @@ svg text { font-family: var(--font-mono); }
 
 <script>
 (function () {
-  const DEFAULTS = { entered: ["L", "S"], L: "440", S: "421", A: "30", H: "289.398", T: "80", t: "120", same: false };
+  const DEFAULTS = { entered: ["L", "S"], L: "440", S: "421", A: "30", H: "289.398", h: "150.793", T: "80", t: "120", same: false };
   const KEY = "leaning-board-v2";
   const DEG = Math.PI / 180;
-  const GEO = ["L", "S", "A", "H"];                  // any two are entered, the other two calculated
-  const NAMES = { L: "L", S: "S", A: "∠BAF", H: "H", T: "T", t: "t" };
+  const GEO = ["L", "S", "A", "H", "h"];             // any two are entered, the rest calculated
+  const NAMES = { L: "L", S: "S", A: "∠BAF", H: "H", h: "h", T: "T", t: "t" };
   // Lengths are shown rounded to a chosen step; the angle always to 0.01°. Rounding is
   // display only: calculations keep full precision.
   const STEPS = { "0.001": [0.001, 3], "0.01": [0.01, 2], "0.1": [0.1, 1], "0.5": [0.5, 1], "1": [1, 0] };
@@ -470,18 +482,27 @@ svg text { font-family: var(--font-mono); }
     SH: "Valid when S > T, H > T, only one angle fits, and 0 < t < AF.",
     LA: "Valid when 0° < ∠BAF < 90°, L > T and 0 < t < AF.",
     SA: "Valid when 0° < ∠BAF < 90°, S > T(sin θ + cos θ) and 0 < t < AF.",
-    AH: "Valid when 0° < ∠BAF < 90°, H > T(sin θ + cos θ) and 0 < t < AF."
+    AH: "Valid when 0° < ∠BAF < 90°, H > T(sin θ + cos θ) and 0 < t < AF.",
+    Lh: "Valid when L > T, h > 0 and 0 < t < AF. Two angles can fit, in which case enter the one you want as ∠BAF. With h set, changing t moves the board.",
+    Sh: "Valid when S > T, h > 0, only one angle fits, and 0 < t < AF. With h set, changing t moves the board.",
+    Hh: "Valid when H > T, h > 0, only one angle fits, and 0 < t < AF. With h set, changing t moves the board.",
+    Ah: "Valid when 0° < ∠BAF < 90°, h > T sin θ − t tan θ and 0 < t < AF. With h set, changing t moves the board."
   };
-  // Formulas in use for each pair of entered values
-  const USES = {
-    LS: ["f-thLS", "f-H"], LH: ["f-thLH", "f-S"], SH: ["f-thSH", "f-LS"],
-    LA: ["f-S", "f-H"], SA: ["f-LS", "f-H"], AH: ["f-LH", "f-S"]
-  };
-  const F_IDS = ["f-thLS", "f-thLH", "f-thSH", "f-LS", "f-LH", "f-S", "f-H"];
+
+  // Formula ids for a pair: the calculated values, each by the formula that produces it
+  function formulasInUse(key) {
+    const ks = key.split("");
+    return GEO.filter((k) => !ks.includes(k)).map((k) => {
+      if (k === "A") return key === "LS" ? "f-thLS" : key === "LH" ? "f-thLH" : "f-thN";
+      if (k === "L") return "f-L" + ["S", "H", "h"].find((x) => ks.includes(x));
+      return "f-" + k;
+    });
+  }
+  const F_IDS = [...document.querySelectorAll(".f-grid code[id]")].map((e) => e.id);
 
   const $ = (id) => document.getElementById(id);
-  const field = { L: $("in-L"), S: $("in-S"), A: $("in-A"), H: $("in-H"), T: $("in-T"), t: $("in-t") };
-  const picks = { L: $("pick-L"), S: $("pick-S"), A: $("pick-A"), H: $("pick-H") };
+  const field = { L: $("in-L"), S: $("in-S"), A: $("in-A"), H: $("in-H"), h: $("in-h"), T: $("in-T"), t: $("in-t") };
+  const picks = { L: $("pick-L"), S: $("pick-S"), A: $("pick-A"), H: $("pick-H"), h: $("pick-h") };
   const inSame = $("in-same");
 
   // The two entered values, least recently touched first. Ticking a third lets the first go.
@@ -490,8 +511,8 @@ svg text { font-family: var(--font-mono); }
 
   // A calculated field shows a rounded value. Its exact value is kept, so switching
   // what is entered doesn't shift the layout. The first edit of that field drops it.
-  const exact = { L: null, S: null, A: null, H: null };
-  const shown = { L: null, S: null, A: null, H: null };
+  const exact = { L: null, S: null, A: null, H: null, h: null };
+  const shown = { L: null, S: null, A: null, H: null, h: null };
 
   // Accepts "12.5" and "12,5". Anything else (thousands separators, units, stray text) is not a number.
   function parse(str) {
@@ -505,10 +526,18 @@ svg text { font-family: var(--font-mono); }
   const fmt = (v, d) => (Number.isFinite(v) ? v.toFixed(d) : "—");
 
   // ---------- Geometry ----------
-  // With S and H known: H cos θ − S sin θ = T cos 2θ. Scan (0°, 90°) for sign changes,
-  // refine each by bisection, keep the angles that give a board longer than T.
-  function solveSH(S, H, T) {
-    const f = (a) => H * Math.cos(a) - S * Math.sin(a) - T * Math.cos(2 * a);
+  // Every length is a(θ)·L + b(θ) for fixed T and t; the angle stands alone. So for any pair
+  // without the angle, L comes from one value's equation and θ from the other's, found by
+  // scanning (0°, 90°) for sign changes and refining each by bisection.
+  const LIN = {
+    L: () => [1, 0],
+    S: (c, s, T) => [c, T * s],
+    H: (c, s, T) => [s, T * c],
+    h: (c, s, T, t) => [s, -t * s / c]               // h = FG = L sin θ − t tan θ
+  };
+  function solvePair(p, vp, q, vq, T, t) {
+    const lenAt = (a) => { const [ap, bp] = LIN[p](Math.cos(a), Math.sin(a), T, t); return (vp - bp) / ap; };
+    const f = (a) => { const [aq, bq] = LIN[q](Math.cos(a), Math.sin(a), T, t); return aq * lenAt(a) + bq - vq; };
     const N = 900, end = Math.PI / 2, roots = [];
     let a0 = 1e-9, f0 = f(a0);
     for (let i = 1; i <= N; i++) {
@@ -523,7 +552,11 @@ svg text { font-family: var(--font-mono); }
       }
       a0 = a1; f0 = f1;
     }
-    return roots.filter((a) => (S - T * Math.sin(a)) / Math.cos(a) > T);
+    const needSupport = p === "h" || q === "h";
+    return roots
+      .filter((a) => Math.abs(f(a)) <= 1e-6 * Math.max(1, Math.abs(vq)))
+      .map((a) => ({ th: a, L: lenAt(a) }))
+      .filter((r) => r.L > T && Number.isFinite(r.L) && (!needSupport || r.L * Math.cos(r.th) > t));
   }
 
   // Returns every segment for the entered pair. Geometry and the support are checked
@@ -533,7 +566,8 @@ svg text { font-family: var(--font-mono); }
     const g = { key, T, t, L: NaN, S: NaN, H: NaN, th: NaN, d2: NaN, r: NaN, AF: NaN, BF: NaN, AE: NaN, DE: NaN, FH: NaN, BH: NaN, badField: null, warn: "" };
     let msg = "OK", th = NaN, L = NaN;
 
-    const missing = key.split("").concat("T").find((k) => !Number.isFinite(v[k]));
+    const ks = key.split("");
+    const missing = ks.concat("T").find((k) => !Number.isFinite(v[k])) || (ks.includes("h") && !Number.isFinite(t) ? "t" : null);
     if (missing) { msg = "Enter a number for " + NAMES[missing]; g.badField = missing; }
     else if (!(T > 0)) msg = "Need T > 0";
     else if (key === "LS" || key === "LH") {
@@ -558,23 +592,30 @@ svg text { font-family: var(--font-mono); }
           if (W === L) g.warn = n === "S" ? "S = L. The board would also fit lying flat" : "H = L. The board would also fit standing upright";
         }
       }
-    } else if (key === "SH") {
-      if (!(v.S > T)) msg = "Need S > T";
-      else if (!(v.H > T)) msg = "Need H > T";
+    } else if (ks.includes("A")) {
+      if (!(v.A > 0 && v.A < 90)) msg = "Need 0° < ∠BAF < 90°";
       else {
-        const roots = solveSH(v.S, v.H, T);
-        if (roots.length === 0) msg = "No board longer than T fits this S and H";
-        else if (roots.length > 1) msg = `Angles that fit: ${roots.map((a) => (a / DEG).toFixed(2) + "°").join(", ")}. Enter one as ∠BAF`;
-        else { th = roots[0]; L = (v.S - T * Math.sin(th)) / Math.cos(th); }
+        th = v.A * DEG;
+        const c = Math.cos(th), s = Math.sin(th), o = ks.find((k) => k !== "A");
+        if (o === "L") { L = v.L; if (!(L > T)) msg = "Need L > T"; }
+        else {
+          const [a1, b1] = LIN[o](c, s, T, t);
+          L = (v[o] - b1) / a1;
+          if (!(L > T)) msg = { S: "Need S > T(sin θ + cos θ)", H: "Need H > T(sin θ + cos θ)", h: "Need h > T sin θ − t tan θ" }[o];
+          else if (o === "h" && !(L * c > t)) msg = "Need 0 < t < AF";
+        }
       }
-    } else if (!(v.A > 0 && v.A < 90)) msg = "Need 0° < ∠BAF < 90°";
-    else {
-      th = v.A * DEG;
-      const c = Math.cos(th), s = Math.sin(th);
-      if (key === "LA") { L = v.L; if (!(L > T)) msg = "Need L > T"; }
-      else if (key === "SA") { if (!(v.S > T * (s + c))) msg = "Need S > T(sin θ + cos θ)"; else L = (v.S - T * s) / c; }
-      else if (!(v.H > T * (s + c))) msg = "Need H > T(sin θ + cos θ)";
-      else L = (v.H - T * c) / s;
+    } else {
+      // Two lengths without the angle: solved numerically
+      const p = ["L", "S", "H", "h"].find((k) => ks.includes(k)), q = ks.find((k) => k !== p);
+      const lowBad = ks.find((k) => (k === "h" ? !(v.h > 0) : !(v[k] > T)));
+      if (lowBad) msg = lowBad === "h" ? "Need h > 0" : `Need ${NAMES[lowBad]} > T`;
+      else {
+        const roots = solvePair(p, v[p], q, v[q], T, t);
+        if (roots.length === 0) msg = `No layout fits these ${NAMES[p]} and ${NAMES[q]}`;
+        else if (roots.length > 1) msg = `Angles that fit: ${roots.map((r) => (r.th / DEG).toFixed(2) + "°").join(", ")}. Enter one as ∠BAF`;
+        else { th = roots[0].th; L = roots[0].L; }
+      }
     }
 
     if (msg === "OK") {
@@ -586,7 +627,7 @@ svg text { font-family: var(--font-mono); }
     if (g.geomOk) {
       if (!Number.isFinite(t)) { msg = "Enter a number for t"; g.badField = "t"; }
       else if (!(t > 0 && t < g.AF)) msg = "Need 0 < t < AF";
-      else { g.FH = g.BF * (g.AF - t) / g.AF; g.BH = g.BF - g.FH; }
+      else { g.FH = g.BF * (g.AF - t) / g.AF; g.BH = g.BF - g.FH; g.h = g.FH; }
     }
     g.deg = g.th / DEG;
     g.msg = msg;
@@ -605,10 +646,11 @@ svg text { font-family: var(--font-mono); }
       field[k].tabIndex = isCalc ? -1 : 0;
       picks[k].checked = !isCalc;
     });
-    F_IDS.forEach((id) => $(id).classList.toggle("active", USES[key].includes(id)));
+    const inUse = formulasInUse(key);
+    F_IDS.forEach((id) => $(id).classList.toggle("active", inUse.includes(id)));
 
     const g = solve(key, {
-      L: read("L"), S: read("S"), A: read("A"), H: read("H"), T: read("T"), t: read("t"), same: inSame.checked
+      L: read("L"), S: read("S"), A: read("A"), H: read("H"), h: read("h"), T: read("T"), t: read("t"), same: inSame.checked
     });
 
     GEO.filter((k) => !entered.includes(k)).forEach((k) => {
@@ -622,7 +664,7 @@ svg text { font-family: var(--font-mono); }
     const slider = $("in-A-range");
     slider.disabled = !entered.includes("A");
     if (Number.isFinite(g.deg) && document.activeElement !== slider) slider.value = String(g.deg);
-    ["L", "S", "H"].forEach((k) => updateLenSlider(k, key, g));
+    ["L", "S", "H", "h"].forEach((k) => updateLenSlider(k, key, g));
 
     ["AF", "BF", "AE", "DE", "FH", "BH"].forEach((k) => {
       const el = $("o-" + k);
@@ -663,7 +705,8 @@ svg text { font-family: var(--font-mono); }
     if (document.activeElement === el) return;
     const v = isIn ? read(k) : g[k];
     let lo = T, hi;
-    if (k === "L") {
+    if (k === "h") { lo = 0; hi = isIn ? 2 * v : g.BF; }   // the support sits between the floor and B
+    else if (k === "L") {
       const other = entered.find((x) => x !== "L");
       if (isIn && (other === "S" || other === "H")) { lo = read(other); hi = 2 * lo; }
       else hi = isIn ? 2 * v : Math.hypot(g.S, g.H);
@@ -941,7 +984,7 @@ svg text { font-family: var(--font-mono); }
     inSame.checked = parts.includes("same");
     GEO.forEach((k) => { shown[k] = exact[k] = null; });
     parts.slice(2).forEach((tok) => {
-      const m = /^([LSHATtq])(\d+(?:p\d+)?)$/.exec(tok);
+      const m = /^([LSHhATtq])(\d+(?:p\d+)?)$/.exec(tok);
       if (!m) return;
       const text = m[2].replace("p", ".");
       if (m[1] === "q") { if (STEPS[text]) roundTo = text; return; }
@@ -992,10 +1035,10 @@ svg text { font-family: var(--font-mono); }
     field[k].addEventListener("keydown", step);
   });
   inSame.addEventListener("change", render);
-  ["L", "S", "H"].forEach((k) => {
+  ["L", "S", "H", "h"].forEach((k) => {
     $("in-" + k + "-range").addEventListener("input", (e) => {
       // Values must exceed T; L may equal S or H
-      const lo = Number(e.target.min), floor = lo === read("T") ? lo + STEPS[roundTo][0] : lo;
+      const lo = Number(e.target.min), floor = k === "h" || lo === read("T") ? lo + STEPS[roundTo][0] : lo;
       field[k].value = fmtLen(Math.max(floor, Number(e.target.value)));
       edited(k);
     });
