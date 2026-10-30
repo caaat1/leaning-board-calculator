@@ -321,6 +321,10 @@ svg text { font-family: var(--font-mono); }
               <span class="sym">H</span>
               <label class="lbl" for="in-H">Height, FC′ <span class="tag">calculated</span></label>
               <input class="num" id="in-H" data-key="H" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="289.398">
+              <div class="slide">
+                <input type="range" id="in-H-range" min="0" max="100" step="0.5" value="0" aria-label="Height FC′">
+                <div class="slide-scale" aria-hidden="true"><span id="H-lo"></span><span id="H-mid"></span><span id="H-hi"></span></div>
+              </div>
             </div>
             <div class="in-row">
               <label class="pick" title="Enter ∠BAF"><input type="checkbox" id="pick-A" aria-label="Enter angle BAF"></label>
@@ -604,6 +608,7 @@ svg text { font-family: var(--font-mono); }
     const slider = $("in-A-range");
     slider.disabled = !entered.includes("A");
     if (Number.isFinite(g.deg) && document.activeElement !== slider) slider.value = String(g.deg);
+    updateHeightSlider(key, g);
 
     ["AF", "BF", "AE", "DE", "FH", "BH"].forEach((k) => {
       const el = $("o-" + k);
@@ -628,6 +633,24 @@ svg text { font-family: var(--font-mono); }
     draw(g);
     save();
     if (!framed) history.replaceState(null, "", "#" + linkCode());   // the address always holds the layout
+  }
+
+  // Height slider range: with L entered, T to L (above L two angles fit); with H calculated,
+  // T to the board's diagonal; with H entered alongside S or the angle nothing caps it, so
+  // the range is centred on the current H. The range is left alone while it's being dragged.
+  function updateHeightSlider(key, g) {
+    const hs = $("in-H-range"), isIn = entered.includes("H");
+    hs.disabled = !isIn;
+    hs.step = String(STEPS[roundTo][0]);
+    const H = isIn ? read("H") : g.H, T = read("T");
+    if (document.activeElement === hs) return;
+    const hi = key === "LH" ? read("L") : !isIn ? Math.hypot(g.L, g.T) : 2 * H;
+    if (!(Number.isFinite(T) && Number.isFinite(hi) && hi > T)) return;
+    hs.min = String(T); hs.max = String(hi);
+    if (Number.isFinite(H)) hs.value = String(H);
+    $("H-lo").textContent = fmtLen(T);
+    $("H-mid").textContent = fmtLen((T + hi) / 2);
+    $("H-hi").textContent = fmtLen(hi);
   }
 
   // ---------- Drawing ----------
@@ -941,6 +964,11 @@ svg text { font-family: var(--font-mono); }
     field[k].addEventListener("keydown", step);
   });
   inSame.addEventListener("change", render);
+  $("in-H-range").addEventListener("input", (e) => {
+    const v = Math.max(Number(e.target.min) + STEPS[roundTo][0], Number(e.target.value));   // H must exceed T
+    field.H.value = fmtLen(v);
+    edited("H");
+  });
   $("in-A-range").addEventListener("input", (e) => {
     field.A.value = Math.min(89.9, Math.max(0.1, Number(e.target.value))).toFixed(1);   // the ends are not valid angles
     edited("A");
