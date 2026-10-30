@@ -263,7 +263,11 @@ svg text { font-family: var(--font-mono); }
 .msg { fill: var(--bad-fg); font-family: var(--font-body); }
 
 /* Formulas */
-.formulas { display: grid; gap: 10px; line-height: 1.35; }
+.formulas { display: grid; gap: 10px; line-height: 1.35; padding-top: 8px; }
+/* Foldable panel: the heading is the toggle */
+.formulas-panel { border-top: 1px solid var(--rule); padding-top: 16px; }
+.formulas-panel > summary { color: var(--muted); }
+.formulas-panel > summary h2 { display: inline; margin: 0; }
 .formulas p { margin: 0; color: var(--muted); max-width: 70ch; }
 .f-block { display: grid; gap: 4px; }
 .f-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 2px 18px; align-items: start; }
@@ -409,8 +413,9 @@ svg text { font-family: var(--font-mono); }
     </section>
   </div>
 
-  <section class="panel formulas" aria-labelledby="h-formulas">
-    <h2 id="h-formulas">Formulas</h2>
+  <details class="panel formulas-panel" id="formulas">
+    <summary><h2>Formulas</h2></summary>
+    <div class="formulas">
     <div class="f-block">
       <h3>Calculated values</h3>
       <div class="f-grid">
@@ -437,7 +442,8 @@ svg text { font-family: var(--font-mono); }
         <code><span class="k k-bh">BG</span> = BF − FG = t tan θ</code>
       </div>
     </div>
-  </section>
+    </div>
+  </details>
 </div>
 
 <script>
@@ -972,6 +978,10 @@ svg text { font-family: var(--font-mono); }
   window.addEventListener("hashchange", () => { if (applyCode(location.hash.slice(1))) render(); });
 
   load();
+  // Remember whether the formulas are unfolded
+  const fp = $("formulas");
+  try { fp.open = localStorage.getItem("leaning-board-formulas") === "open"; } catch (e) {}
+  fp.addEventListener("toggle", () => { try { localStorage.setItem("leaning-board-formulas", fp.open ? "open" : "closed"); } catch (e) {} });
   if (/^#v1-/.test(location.hash)) applyCode(location.hash.slice(1));   // a shared link wins over saved state
   document.querySelectorAll('input[name="round"]').forEach((el) => {
     el.checked = el.value === roundTo;
