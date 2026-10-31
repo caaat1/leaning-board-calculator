@@ -665,6 +665,22 @@ svg text { font-family: var(--font-mono); }
     return g;
   }
 
+  // The rule hint changes length with the pair: let the height glide instead of jumping
+  let hintAnim = null, hintShown = false;
+  function setHint(text) {
+    const el = $("rule-hint");
+    if (el.textContent === text) return;
+    const calm = !hintShown || !el.animate || matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const from = el.getBoundingClientRect().height;      // also right in the middle of an earlier glide
+    if (hintAnim) { hintAnim.cancel(); hintAnim = null; }
+    el.textContent = text; hintShown = true;
+    if (calm) return;
+    const to = el.offsetHeight;
+    el.style.overflow = "hidden";
+    const a = hintAnim = el.animate([{ height: from + "px", opacity: 0.25 }, { height: to + "px", opacity: 1 }], { duration: 240, easing: "ease" });
+    a.onfinish = () => { if (hintAnim === a) { hintAnim = null; el.style.overflow = ""; } };
+  }
+
   // ---------- Page ----------
   function render() {
     const key = pairKey();
@@ -706,7 +722,7 @@ svg text { font-family: var(--font-mono); }
     $("r-lbl").textContent = key === "LH" ? "r = √(L² + T² − H²)" : "r = √(L² + T² − S²)";
     $("o-d2").textContent = fmt(g.d2, 3);
     $("o-r").textContent = fmtLen(g.r);
-    $("rule-hint").textContent = HINTS[key];
+    setHint(HINTS[key]);
 
     const c = $("check");
     const warn = g.ok && g.warn;                        // valid, but worth knowing about
